@@ -32,7 +32,11 @@
   font-size: 2.8rem;
   font-weight: 700;
   background: var(--gradient-accent);
-  -webkit-background-clip: text;
+background: var(--gradient-accent);
+-webkit-background-clip: text;  /* Chrome / Safari */
+background-clip: text;          /* Standard syntax for Firefox + others */
+color: transparent;
+
   color: transparent;
 }
 
@@ -77,4 +81,48 @@
 
 .login-button:hover {
   opacity: 0.9;
+}
+
+/* ----------------------------------------------
+   Mobile layout adjustments (stack vertical)
+---------------------------------------------- */
+@media (max-width: 768px) {
+  .login-card {
+    flex-direction: column;
+    height: auto;
+    padding: var(--spacing-md);
+    text-align: center;
+    gap: var(--spacing-lg);
+  }
+
+  .login-left {
+    padding-left: 0;
+  }
+
+  .login-title {
+    font-size: 2rem;
+  }
+
+  .login-subtitle {
+    font-size: 1rem;
+    margin-top: var(--spacing-sm);
+  }
+
+  .login-form {
+    max-width: 100%;
+    width: 100%;
+    border-width: 1.5px;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--subtext);
 }
