@@ -1,19 +1,38 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth.jsx";
 import "../styles/login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    // For now: skip auth entirely.
-    // Directly navigate to the protected page.
-    navigate("/notes");
+    try {
+      const res = await fetch("http://127.0.0.1:5000/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        alert("Invalid credentials.");
+        return;
+      }
+
+      const data = await res.json();
+      login(data.token);
+      navigate("/notes");
+
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Login failed.");
+    }
   }
 
   return (
