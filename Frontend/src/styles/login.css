@@ -1,0 +1,80 @@
+/* Wrapper covering whole screen */
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Main white card */
+.login-card {
+  width: 80%;
+  max-width: 1100px;
+  height: 70%;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+}
+
+/* Left side branding */
+.login-left {
+  flex: 1;
+  padding-left: var(--spacing-lg);
+}
+
+.login-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.login-subtitle {
+  font-size: 1.2rem;
+  margin-top: var(--spacing-md);
+  color: var(--subtext);
+}
+
+/* Right side form */
+.login-form {
+  flex: 0.8;
+  max-width: 320px;
+  background: var(--surface);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--accent-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Inputs */
+.login-input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+}
+
+/* Gradient login button */
+.login-button {
+  padding: var(--spacing-sm);
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  color: white;
+  background: var(--gradient-accent);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.login-button:hover {
+  opacity: 0.9;
+}
