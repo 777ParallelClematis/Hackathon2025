@@ -1,0 +1,65 @@
+/* Main container */
+.revision-container {
+  padding: 2rem;
+  background: var(--light-grey);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Upload row */
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.import-button {
+  padding: 0.7rem 1.2rem;
+  background: var(--brand-gradient);
+  color: white;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.file-input {
+  padding: 0.5rem;
+}
+
+/* Main content layout */
+.revision-content {
+  display: flex;
+  gap: 2rem;
+}
+
+.notes-review,
+.feedback-panel {
+  flex: 1;
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+/* Cheat sheet box */
+.cheatsheet-box {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  min-height: 150px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .revision-content {
+    flex-direction: column;
+  }
+
+  .upload-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

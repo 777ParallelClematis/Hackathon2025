@@ -1,0 +1,61 @@
+.nb-nav {
+  width: 100%;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nb-logo {
+  font-size: 1.2rem;
+  font-weight: 600;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nb-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nb-link {
+  text-decoration: none;
+  color: var(--text-dark);
+  font-size: 1rem;
+  padding: 0.4rem 0.6rem;
+  transition: 0.2s ease;
+  border-radius: 6px;
+}
+
+.nb-link:hover {
+  background: var(--brand-gradient);
+  color: white;
+}
+
+.nb-logout {
+  padding: 0.5rem 1rem;
+  background: var(--brand-gradient);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nb-logout:hover {
+  opacity: 0.9;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .nb-links {
+    gap: 0.8rem;
+  }
+
+  .nb-nav {
+    padding: 0.8rem;
+  }
+}
