@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
-import { Link } from "react-router-dom";
 import "../styles/login.css";
 
 export default function Login() {
@@ -28,6 +27,7 @@ export default function Login() {
 
       const data = await res.json();
       login(data.token);
+
       navigate("/notes");
     } catch (err) {
       console.error("Login error:", err);
@@ -38,6 +38,7 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
+
         <div className="login-left">
           <h1 className="login-title">NoteBuddy</h1>
           <p className="login-subtitle">
@@ -49,9 +50,7 @@ export default function Login() {
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
+            <label htmlFor="email" className="form-label">Email</label>
             <input
               id="email"
               type="email"
@@ -64,9 +63,7 @@ export default function Login() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label htmlFor="password" className="form-label">Password</label>
             <input
               id="password"
               type="password"
@@ -83,12 +80,11 @@ export default function Login() {
           </button>
 
           <p className="mt-3 text-center">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary">
-              Create one
-            </Link>
+            Don’t have an account?{" "}
+            <Link to="/register" className="text-primary">Create one</Link>
           </p>
         </form>
+
       </div>
     </div>
   );

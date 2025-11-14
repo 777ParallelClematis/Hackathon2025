@@ -3,7 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
+  Outlet,
 } from "react-router-dom";
 
 import Login from "./pages/Login.jsx";
@@ -14,22 +14,17 @@ import Register from "./pages/Register.jsx";
 import Navbar from "./components/Navbar.jsx";
 import { useAuth } from "./hooks/useAuth.jsx";
 
-// Wraps internal pages + decides if navbar should show
-function Layout({ children }) {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
-
-  const shouldShowNavbar = isAuthenticated && location.pathname !== "/";
-
+// Layout ONLY for authenticated pages
+function AuthedLayout() {
   return (
     <>
-      {shouldShowNavbar && <Navbar />}
-      {children}
+      <Navbar />
+      <Outlet />
     </>
   );
 }
 
-// Block unauthenticated access
+// Protect internal pages
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/" replace />;
@@ -38,41 +33,26 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          {/* Public login page */}
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <Routes>
 
-          {/* Auth-protected pages */}
-          <Route
-            path="/notes"
-            element={
-              <ProtectedRoute>
-                <InClassNotes />
-              </ProtectedRoute>
-            }
-          />
+        {/* PUBLIC PAGES (no navbar) */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route
-            path="/learn"
-            element={
-              <ProtectedRoute>
-                <Revision />
-              </ProtectedRoute>
-            }
-          />
+        {/* AUTHENTICATED LAYOUT (navbar visible) */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AuthedLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/notes" element={<InClassNotes />} />
+          <Route path="/learn" element={<Revision />} />
+          <Route path="/notebook" element={<Notebook />} />
+        </Route>
 
-          <Route
-            path="/notebook"
-            element={
-              <ProtectedRoute>
-                <Notebook />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Layout>
+      </Routes>
     </BrowserRouter>
   );
 }
