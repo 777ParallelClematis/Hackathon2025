@@ -1,0 +1,9 @@
+/* Notebook page minimal overrides */
+
+.editor-placeholder {
+  height: 100%;
+  border: 2px dashed #aaa;
+  border-radius: 6px;
+  padding: 20px;
+  font-size: 1.1rem;
+}
