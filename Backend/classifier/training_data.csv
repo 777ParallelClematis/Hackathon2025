@@ -1,0 +1,63 @@
+notes,explanation,label
+"A binary tree is a hierarchical structure where each node has at most two children: left and right.","A binary tree always has exactly two children.",0
+"A binary tree is a hierarchical structure where each node has at most two children: left and right.","A binary tree has maximum of two children per node.",1
+"BFS explores nodes level by level using a queue.","BFS uses a queue and visits nodes in layers.",1
+"BFS explores nodes level by level using a queue.","BFS goes as deep as possible before coming back up.",0
+"DFS explores as far as possible down each branch before backtracking.","DFS explores to the deepest level first.",1
+"DFS explores as far as possible down each branch before backtracking.","DFS always guarantees the shortest path.",0
+"The time complexity of binary search is O(log n).","Binary search cuts the search space in half every time, so it is O(log n).",1
+"The time complexity of binary search is O(log n).","Binary search checks every element one by one making it O(n).",0
+"In probability, independent events do not influence each other.","Independent events affect the probability of each other.",0
+"In probability, independent events do not influence each other.","Independent events do not change each other's outcomes.",1
+"OOP encapsulation hides internal details and exposes only necessary interfaces.","Encapsulation means wrapping data and methods while hiding internal implementation.",1
+"OOP encapsulation hides internal details and exposes only necessary interfaces.","Encapsulation is the same thing as inheritance.",0
+"QuickSort has an average time complexity of O(n log n).","QuickSort usually takes O(n log n) time to finish.",1
+"QuickSort has an average time complexity of O(n log n).","QuickSort always guarantees O(n) run time.",0
+"In a relational database, a primary key uniquely identifies each row.","A primary key is a column that uniquely identifies each record.",1
+"In a relational database, a primary key uniquely identifies each row.","A primary key is optional and does not need to be unique.",0
+"A stack uses LIFO: last-in, first-out.","Stacks follow LIFO order.",1
+"A stack uses LIFO: last-in, first-out.","Stacks follow FIFO order like queues.",0
+"A queue uses FIFO: first-in, first-out.","Queues process items in the same order they arrive.",1
+"A queue uses FIFO: first-in, first-out.","Queues remove the newest item first.",0
+"Mergesort divides the list, sorts each half, and merges them back together.","Mergesort works by splitting the list and merging sorted halves.",1
+"Mergesort divides the list, sorts each half, and merges them back together.","Mergesort swaps adjacent elements repeatedly.",0
+"Hash tables use a hash function to map keys to indices in an array.","Hash tables rely on hashing to find the index for a key.",1
+"Hash tables use a hash function to map keys to indices in an array.","Hash tables store elements in sorted order automatically.",0
+"The worst case time complexity of QuickSort is O(n squared).","In the worst case QuickSort can degrade to O(n squared).",1
+"The worst case time complexity of QuickSort is O(n squared).","QuickSort is always O(n log n) and never slower.",0
+"Stable sorting algorithms keep equal elements in their original relative order.","A stable sort keeps equal items in the same order as the input.",1
+"Stable sorting algorithms keep equal elements in their original relative order.","A stable sort always runs in constant time.",0
+"Recursion must have a base case to stop the calls.","Without a base case, a recursive function will never terminate.",1
+"Recursion must have a base case to stop the calls.","Recursion does not need any base case as long as you use loops.",0
+"A linked list is a linear data structure where each node stores data and a reference to the next node.","A linked list stores each element with a pointer to the next element.",1
+"A linked list is a linear data structure where each node stores data and a reference to the next node.","A linked list stores all elements contiguously in one big array.",0
+"In big O notation, we focus on the dominant term and ignore constant factors.","Big O describes asymptotic growth and ignores constant multipliers.",1
+"In big O notation, we focus on the dominant term and ignore constant factors.","Big O always gives the exact running time in seconds.",0
+"A process is a running program with its own memory space, while threads share a process's memory.","Threads are lightweight units that share memory within a process.",1
+"A process is a running program with its own memory space, while threads share a process's memory.","Threads always have completely separate memory spaces like different processes.",0
+"Deadlock can occur when four conditions hold: mutual exclusion, hold and wait, no preemption, and circular wait.","Deadlock needs those four conditions including circular wait.",1
+"Deadlock can occur when four conditions hold: mutual exclusion, hold and wait, no preemption, and circular wait.","Deadlock only happens when there is a single process using the CPU.",0
+"TCP provides reliable, ordered delivery of data, while UDP is connectionless and does not guarantee delivery.","TCP is reliable and ordered, UDP is faster but unreliable.",1
+"TCP provides reliable, ordered delivery of data, while UDP is connectionless and does not guarantee delivery.","UDP guarantees delivery but TCP does not.",0
+"HTTP GET is typically used to request data, while POST is commonly used to send data to be processed.","GET usually fetches data and POST usually sends data to the server.",1
+"HTTP GET is typically used to request data, while POST is commonly used to send data to be processed.","GET and POST are identical and can be used interchangeably without any difference.",0
+"The derivative of a function at a point represents the instantaneous rate of change at that point.","The derivative tells you how fast the function is changing at a specific point.",1
+"The derivative of a function at a point represents the instantaneous rate of change at that point.","The derivative always gives the total area under the curve.",0
+"The definite integral of a function over an interval represents the signed area under the curve on that interval.","The definite integral gives the net area under the curve between the bounds.",1
+"The definite integral of a function over an interval represents the signed area under the curve on that interval.","The definite integral always represents the slope of the tangent line.",0
+"For matrix multiplication, the inner dimensions must match and the result has the outer dimensions.","To multiply matrices, the number of columns of the first must equal the number of rows of the second.",1
+"For matrix multiplication, the inner dimensions must match and the result has the outer dimensions.","Any two matrices of any size can always be multiplied in any order.",0
+"The normal distribution is symmetric, bell-shaped, and described by its mean and standard deviation.","A normal distribution is symmetric around the mean with most values near the mean.",1
+"The normal distribution is symmetric, bell-shaped, and described by its mean and standard deviation.","A normal distribution is always skewed heavily to the right.",0
+"The p-value in hypothesis testing is the probability of observing data at least as extreme as the sample, assuming the null hypothesis is true.","A small p-value means the observed data would be unlikely if the null hypothesis were true.",1
+"The p-value in hypothesis testing is the probability of observing data at least as extreme as the sample, assuming the null hypothesis is true.","A large p-value always proves the null hypothesis is true.",0
+"A confidence interval gives a range of plausible values for a population parameter based on sample data.","A 95 percent confidence interval means we use a method that captures the true parameter 95 percent of the time in repeated samples.",1
+"A confidence interval gives a range of plausible values for a population parameter based on sample data.","A 95 percent confidence interval means there is a 95 percent chance the already computed interval will change its endpoints.",0
+"Correlation measures the strength and direction of a linear relationship between two variables but does not imply causation.","A high correlation does not prove that one variable causes changes in the other.",1
+"Correlation measures the strength and direction of a linear relationship between two variables but does not imply causation.","If two variables are correlated, one must definitely cause the other.",0
+"Overfitting in machine learning happens when a model learns noise in the training data and performs poorly on new data.","An overfitted model works very well on training data but generalizes badly to unseen data.",1
+"Overfitting in machine learning happens when a model learns noise in the training data and performs poorly on new data.","Overfitting means the model is always simple and underestimates the patterns in the data.",0
+"Gradient descent is an iterative optimization algorithm that moves in the direction of the negative gradient to minimize a loss function.","Gradient descent updates parameters by moving opposite to the gradient to reduce loss.",1
+"Gradient descent is an iterative optimization algorithm that moves in the direction of the negative gradient to minimize a loss function.","Gradient descent always jumps directly to the global minimum in a single step.",0
+"In supervised learning, models are trained on labeled data consisting of input output pairs.","Supervised learning uses labeled examples where the correct answer is known.",1
+"In supervised learning, models are trained on labeled data consisting of input output pairs.","Supervised learning never uses labels and only discovers structure on its own.",0
