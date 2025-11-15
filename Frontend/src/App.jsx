@@ -13,6 +13,7 @@ import Notebook from "./pages/Notebook.jsx";
 import Register from "./pages/Register.jsx";
 import Navbar from "./components/Navbar.jsx";
 import { useAuth } from "./hooks/useAuth.jsx";
+//import "./global.css";
 
 // Layout ONLY for authenticated pages
 function AuthedLayout() {
