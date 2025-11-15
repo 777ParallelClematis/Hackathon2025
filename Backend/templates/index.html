@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Answer Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result, #deepAnalysis {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: #e9ecef;
+        }
+        .classification-correct { color: green; font-weight: bold; }
+        .classification-incorrect { color: red; font-weight: bold; }
+        .classification-partial { color: orange; font-weight: bold; }
+        .classification-source { font-size: 0.9em; color: #6c757d; }
+        #cheatSheetOutput {
+            white-space: pre-wrap; /* Keeps bullet points and line breaks from LLM response */
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 AI Answer Grader</h1>
+        
+        <form id="classificationForm">
+            <label for="prompt">Question (Prompt):</label>
+            <input type="text" id="prompt" name="prompt" value="What is a queue in data structures?" required>
+            
+            <label for="response">Student Answer (Response):</label>
+            <textarea id="response" name="response" rows="5" required>A queue works like a stack, but elements are taken out from the front instead of the top.</textarea>
+
+            <label for="context">Reference Standard / Context (500 words+):</label>
+            <textarea id="context" name="context" rows="8" placeholder="Paste the full 500-word reference text here (e.g., from data/reference_standard.txt)" required></textarea>
+            
+            <button type="submit" id="classifyBtn">Classify Answer (Quick Grade)</button>
+            <button type="button" id="analyzeBtn">Analyze & Get Cheat Sheet</button>
+        </form>
+
+        <div id="result">
+            <h3>Quick Grade Result</h3>
+            <p><strong>Classification:</strong> <span id="classificationText">Awaiting input...</span></p>
+            <p><strong>Feedback:</strong> <span id="feedbackText">Submit a prompt and response to get feedback.</span></p>
+            <p class="classification-source">Analyzed by: <span id="sourceText">N/A</span> (Score: <span id="scoreText">N/A</span>)</p>
+        </div>
+
+        <div id="deepAnalysis">
+            <h3>Detailed Analysis & Cheat Sheet (Uses /analyze)</h3>
+            <p><strong>Weak Spots Identified:</strong> <span id="weakSpotsOutput">Click 'Analyze & Get Cheat Sheet' to run deep analysis.</span></p>
+            <p><strong>Keywords Missed/Used:</strong> <span id="keywordsOutput">N/A</span></p>
+            <p><strong>Cheat Sheet Content:</strong></p>
+            <div id="cheatSheetOutput">N/A</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Helper Function to Get Data ---
+        function getFormData() {
+            return {
+                prompt: document.getElementById('prompt').value,
+                response: document.getElementById('response').value,
+                context: document.getElementById('context').value
+            };
+        }
+
+        // --- CLASSIFY Endpoint Logic (/classify) ---
+        document.getElementById('classificationForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+            const data = getFormData();
+            const resultDiv = document.getElementById('result');
+
+            // Set loading state
+            document.getElementById('classificationText').textContent = 'Processing...';
+            document.getElementById('feedbackText').textContent = 'Please wait...';
+            resultDiv.style.borderColor = '#007bff';
+
+            try {
+                const res = await fetch('/classify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                
+                // Update result display
+                const classText = document.getElementById('classificationText');
+                classText.textContent = result.classification;
+                document.getElementById('feedbackText').textContent = result.feedback;
+                document.getElementById('sourceText').textContent = result.source;
+                document.getElementById('scoreText').textContent = result.score ? result.score.toFixed(4) : 'N/A';
+                
+                // Style the classification text
+                classText.className = ''; 
+                if (result.classification === 'CORRECT') {
+                    classText.classList.add('classification-correct');
+                    resultDiv.style.borderColor = 'green';
+                } else if (result.classification === 'INCORRECT') {
+                    classText.classList.add('classification-incorrect');
+                    resultDiv.style.borderColor = 'red';
+                } else if (result.classification === 'PARTIALLY_CORRECT') {
+                    classText.classList.add('classification-partial');
+                    resultDiv.style.borderColor = 'orange';
+                } else {
+                    resultDiv.style.borderColor = 'black'; // For ERROR
+                }
+
+            } catch (error) {
+                document.getElementById('classificationText').textContent = 'ERROR';
+                document.getElementById('feedbackText').textContent = `Fetch Error: ${error.message}. Check server console for traceback.`;
+                resultDiv.style.borderColor = 'black';
+                console.error('Fetch Error:', error);
+            }
+        });
+
+        // --- ANALYZE Endpoint Logic (/analyze) ---
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            const data = getFormData();
+            const analysisDiv = document.getElementById('deepAnalysis');
+
+            // Set loading state
+            document.getElementById('weakSpotsOutput').textContent = 'Analyzing for weak spots...';
+            document.getElementById('keywordsOutput').textContent = 'Extracting keywords...';
+            document.getElementById('cheatSheetOutput').textContent = 'Generating cheat sheet...';
+            analysisDiv.style.borderColor = '#007bff';
+
+            try {
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    document.getElementById('weakSpotsOutput').textContent = result.weak_spots;
+                    document.getElementById('keywordsOutput').textContent = result.keywords;
+                    document.getElementById('cheatSheetOutput').textContent = result.cheat_sheet;
+                    analysisDiv.style.borderColor = 'purple';
+                } else {
+                    // Handle error from the server side (e.g., JSON parse error in Flask)
+                    document.getElementById('weakSpotsOutput').textContent = `Server Error: ${result.message}`;
+                    document.getElementById('cheatSheetOutput').textContent = result.raw_response || 'Check server logs.';
+                    analysisDiv.style.borderColor = 'black';
+                }
+
+            } catch (error) {
+                document.getElementById('weakSpotsOutput').textContent = `Client Error: ${error.message}`;
+                document.getElementById('cheatSheetOutput').textContent = 'Failed to connect to /analyze endpoint.';
+                analysisDiv.style.borderColor = 'black';
+                console.error('Analyze Fetch Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
