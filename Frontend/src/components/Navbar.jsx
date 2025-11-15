@@ -21,7 +21,7 @@ export default function Navbar() {
 <div className="nb-center">
   <Link to="/notes" className="nb-item">In Class</Link>
   <Link to="/learn" className="nb-item">Revision</Link>
-  <Link to="/notebook" className="nb-item">Notes</Link>
+  <Link to="/notebook" className="nb-item">Notebook</Link>
 </div>
 
 
