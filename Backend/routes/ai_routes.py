@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import os
 import requests
+from middleware.auth import require_auth
 
 ai_routes = Blueprint("ai_routes", __name__)
 
@@ -10,6 +11,7 @@ MODEL_NAME = "moonshotai/Kimi-K2-Thinking:novita"
 
 
 @ai_routes.route("/generate-questions", methods=["POST"])
+@require_auth
 def generate_questions():
     try:
         data = request.get_json()
@@ -27,9 +29,6 @@ def generate_questions():
             "Content-Type": "application/json",
         }
 
-        # ----------------------------------------------------
-        # NEW PROMPT — suppress chain-of-thought completely
-        # ----------------------------------------------------
         prompt = (
             "Read the following notes and immediately produce three specific learning questions.\n"
             "DO NOT think step by step. DO NOT analyze the notes. DO NOT explain your reasoning.\n"
@@ -66,9 +65,6 @@ def generate_questions():
         print(reply)
         print("-------------------------\n")
 
-        # ----------------------------------------------------
-        # Extract questions (ANY line ending with "?")
-        # ----------------------------------------------------
         questions = []
         for line in reply.split("\n"):
             clean = line.strip()

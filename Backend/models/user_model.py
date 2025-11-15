@@ -1,4 +1,7 @@
+# user_model.py
 from db import get_db
 
-db = get_db()
-users = db.users  # this references the "users" collection
+
+def get_users_collection():
+    db = get_db()
+    return db["users"]

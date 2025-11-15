@@ -1,17 +1,20 @@
-from flask import request, jsonify
-from models.user_model import users
+from flask import request, jsonify, current_app
+from models.user_model import get_users_collection
 import bcrypt
 import jwt
 import os
 from datetime import datetime, timedelta
-from bson import ObjectId
 
 
 def _create_jwt(user_id: str) -> str:
     """
     Create a JWT for the given user id.
+    Uses JWT_SECRET from environment or app config.
     """
-    secret = os.getenv("JWT_SECRET", "dev-secret-change-me")
+    secret = current_app.config.get("JWT_SECRET") or os.getenv("JWT_SECRET")
+    if not secret:
+        raise RuntimeError("JWT_SECRET must be set")
+
     expires_hours = int(os.getenv("JWT_EXPIRES_HOURS", "24"))
 
     payload = {
@@ -20,12 +23,11 @@ def _create_jwt(user_id: str) -> str:
         "iat": datetime.utcnow(),
     }
 
-    # PyJWT returns a string in v2+
-    token = jwt.encode(payload, secret, algorithm="HS256")
-    return token
+    return jwt.encode(payload, secret, algorithm="HS256")
 
 
 def register_user():
+    users = get_users_collection()
     data = request.json or {}
     email = data.get("email")
     password = data.get("password")
@@ -33,15 +35,12 @@ def register_user():
     if not email or not password:
         return jsonify({"message": "Email and password are required"}), 400
 
-    # normalize email
     email = email.strip().lower()
 
-    # check if user already exists
     existing = users.find_one({"email": email})
     if existing:
         return jsonify({"message": "User already exists"}), 409
 
-    # hash password
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
     password_hash = bcrypt.hashpw(password_bytes, salt).decode("utf-8")
@@ -55,7 +54,6 @@ def register_user():
     result = users.insert_one(user_doc)
     user_id = str(result.inserted_id)
 
-    # optional: issue JWT immediately on register
     token = _create_jwt(user_id)
 
     return jsonify(
@@ -68,6 +66,7 @@ def register_user():
 
 
 def login_user():
+    users = get_users_collection()
     data = request.json or {}
     email = data.get("email")
     password = data.get("password")
@@ -79,7 +78,6 @@ def login_user():
 
     user = users.find_one({"email": email})
     if not user:
-        # don’t leak whether email exists
         return jsonify({"message": "Invalid credentials"}), 401
 
     stored_hash = user.get("password_hash")
