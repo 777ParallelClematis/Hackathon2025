@@ -5,14 +5,14 @@
 
 :root {
   /* Dark Mode Core */
-  --bg: #1a1a1a;             /* deep charcoal */
-  --surface: #242424;        /* elevated charcoal */
-  --surface-alt: #2e2e2e;    /* secondary charcoal */
+  --bg: #1a1a1a;
+  --surface: #242424;
+  --surface-alt: #2e2e2e;
   --border: #3a3a3a;
 
   /* Typography */
-  --text: #f2eee4;           /* ivory */
-  --subtext: #c8c3b8;        /* muted ivory */
+  --text: #f2eee4;
+  --subtext: #c8c3b8;
   --font-main: "JetBrains Mono", monospace;
 
   /* Spacing */
@@ -27,9 +27,9 @@
   --r-md: 12px;
   --r-lg: 20px;
 
-  /* Brand Accents (subtle only) */
-  --accent: #5ccfe6;     /* muted cyan, not neon */
-  --accent-soft: #7aa0b2; /* softer version */
+  /* Accents */
+  --accent: #5ccfe6;
+  --accent-soft: #7aa0b2;
 }
 
 /* --------------------------------------------------
@@ -50,12 +50,14 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle texture */
+/* Subtle base texture */
 body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)' opacity='0.035'/%3E%3C/svg%3E");
 }
 
-/* Remove default outlines */
+/* --------------------------------------------------
+   FORM BASE
+-------------------------------------------------- */
 input, button, textarea, select {
   font-family: var(--font-main);
   outline: none;
@@ -119,11 +121,10 @@ textarea.form-control {
   border-color: var(--accent);
 }
 
-/* Primary button without gradients */
 .btn-primary {
   background: var(--accent);
   border: 1px solid var(--accent-soft);
-  color: #000; /* necessary for contrast */
+  color: #000;
   font-weight: 600;
 }
 

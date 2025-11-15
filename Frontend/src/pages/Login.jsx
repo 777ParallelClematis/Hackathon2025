@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
+
+import "../styles/global.css";
+import "../styles/backgrounds.css";   // ← add this
 import "../styles/login.css";
 
 export default function Login() {
@@ -27,8 +30,8 @@ export default function Login() {
 
       const data = await res.json();
       login(data.token);
-
       navigate("/notes");
+
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed.");
@@ -81,7 +84,7 @@ export default function Login() {
 
           <p className="mt-3 text-center">
             Don’t have an account?{" "}
-            <Link to="/register" className="text-primary">Create one</Link>
+            <Link to="/register">Create one</Link>
           </p>
         </form>
 
