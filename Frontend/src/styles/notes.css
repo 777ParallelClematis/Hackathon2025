@@ -57,8 +57,10 @@
   bottom: 20px;
   right: 20px;
 
-  width: 260px;
-  max-height: 150px; /* 3 questions */
+  width: 300px;           /* wider for long questions */
+  max-height: 45vh;       /* expands safely */
+  overflow-y: auto;       /* scroll internally when needed */
+
   background: var(--surface-alt);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
@@ -76,32 +78,6 @@
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 8px;
-}
-
-.ic-q-scroll {
-  overflow-y: auto;
-  flex-grow: 1;
-  padding-right: 6px;
-}
-
-.ic-q-item {
-  margin-bottom: 10px;
-  line-height: 1.35;
-  font-size: 0.95rem;
-}
-
-.ic-q-empty {
-  color: var(--subtext);
-  font-style: italic;
-}
-
-/* Scrollbar */
-.ic-q-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.ic-q-scroll::-webkit-scrollbar-thumb {
-  background: #666;
-  border-radius: 4px;
 }
 
 /* -------------------------------------------------------------
@@ -193,6 +169,7 @@
   .ic-questions-overlay {
     width: 80%;
     right: 10%;
+    max-height: 40vh;
   }
   .ic-stats-overlay {
     width: 80%;
@@ -201,35 +178,37 @@
   }
 }
 
-
 /* ------------------------------- */
-/* Question Bubbles                */
+/* Question Bubbles — Clean Look   */
 /* ------------------------------- */
 
 .ic-q-bubbles {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 4px;
+  gap: 12px;
+  padding-right: 6px;
 }
 
 .ic-q-bubble {
-  background: #f5eadc;
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  padding: 4px 0;
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
+  width: 100%;
+
   font-family: inherit;
   font-size: 0.95rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
-  border: 1px solid #e3d6c5;
 }
 
 .ic-q-text {
   flex: 1;
-  padding-right: 8px;
-  line-height: 1.4;
+  line-height: 1.35;
+  padding-right: 10px;
+  color: var(--text);
 }
 
 .ic-q-close {
@@ -238,11 +217,12 @@
   font-size: 1.15rem;
   cursor: pointer;
   padding: 0 4px;
-  color: #444;
+  color: var(--subtext);
   transition: 0.15s ease;
+  margin-top: -2px;
 }
 
 .ic-q-close:hover {
-  color: #b00020;
-  transform: scale(1.15);
+  color: var(--accent2);
+  transform: scale(1.1);
 }
