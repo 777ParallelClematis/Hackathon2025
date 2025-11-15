@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 
 from routes.user_routes import user_routes
+from routes.notes_routes import notes_routes
 from db import get_db
 
 load_dotenv()
@@ -13,11 +14,9 @@ CORS(app)
 
 # Register blueprints
 app.register_blueprint(user_routes, url_prefix="/api/users")
+app.register_blueprint(notes_routes, url_prefix="/api/notes")
 
 
-# ----------------------------
-# TEST DB ROUTE
-# ----------------------------
 @app.route("/api/test-db", methods=["GET"])
 def test_db():
     try:
@@ -29,8 +28,5 @@ def test_db():
         return {"status": "error", "message": str(e)}, 500
 
 
-# ----------------------------
-# START SERVER (this was missing!)
-# ----------------------------
 if __name__ == "__main__":
     app.run(port=int(os.getenv("PORT", 5000)), debug=True)
