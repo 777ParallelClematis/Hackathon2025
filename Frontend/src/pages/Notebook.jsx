@@ -1,18 +1,42 @@
 import { useEffect, useState } from "react";
 import "../styles/notebook.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+
+// helper for GET requests
+async function getJSON(path) {
+  const res = await fetch(`${API_URL}${path}`);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+  return data;
+}
+
 export default function Notebook() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
-  // Fetch notes from the backend
+  // student id (same pattern as Revision.jsx)
+  const [studentId] = useState(
+    () => localStorage.getItem("student_id") || "TEMP-STUDENT-ID"
+  );
+
   async function loadNotes() {
     try {
-      const res = await fetch("http://127.0.0.1:8080/api/notes/all");
-      const data = await res.json();
-      setNotes(data);
+      setLoading(true);
+      setError("");
+
+      // hit the same backend route used by Revision.jsx
+      const data = await getJSON(`/notes?student_id=${encodeURIComponent(studentId)}`);
+
+      // backend returns { notes: [...] }
+      const list = data.notes || [];
+      setNotes(list);
     } catch (err) {
       console.error("Error loading notes:", err);
+      setError(err.message || "Could not load your notes.");
     } finally {
       setLoading(false);
     }
@@ -20,7 +44,7 @@ export default function Notebook() {
 
   useEffect(() => {
     loadNotes();
-  }, []);
+  }, [studentId]);
 
   return (
     <div className="container-fluid py-4">
@@ -35,35 +59,51 @@ export default function Notebook() {
             <button className="btn btn-primary w-50">New</button>
           </div>
 
-          {/* Notes List */}
-          <div className="d-flex flex-column gap-3" style={{ overflowY: "auto", maxHeight: "80vh" }}>
+          {/* Error message */}
+          {error && (
+            <div className="alert alert-danger mb-3">
+              {error}
+            </div>
+          )}
 
+          {/* Notes List */}
+          <div
+            className="d-flex flex-column gap-3"
+            style={{ overflowY: "auto", maxHeight: "80vh" }}
+          >
             {loading && (
               <div className="card p-4 text-muted text-center">Loading...</div>
             )}
 
-            {!loading && notes.length === 0 && (
+            {!loading && notes.length === 0 && !error && (
               <div className="card p-4 text-muted text-center">
                 No notes saved yet.
               </div>
             )}
 
             {!loading && notes.map((note) => (
-              <div key={note.id} className="card p-3 notebook-note-card">
+              <div key={note._id} className="card p-3 notebook-note-card">
 
-                <div className="small text-muted mb-2">
-                  {new Date(note.created_at).toLocaleString()}
+                <div className="small text-muted mb-1">
+                  {note.created_at
+                    ? new Date(note.created_at).toLocaleString()
+                    : "No date"}
+                </div>
+
+                <div className="fw-bold mb-1">
+                  {note.title || "Untitled note"}
                 </div>
 
                 <div className="notebook-note-preview">
-                  {note.content.length > 120
-                    ? note.content.slice(0, 120) + "…"
-                    : note.content}
+                  {note.note_text
+                    ? (note.note_text.length > 120
+                        ? note.note_text.slice(0, 120) + "…"
+                        : note.note_text)
+                    : <span className="text-muted">No content</span>}
                 </div>
 
               </div>
             ))}
-
           </div>
         </div>
 
