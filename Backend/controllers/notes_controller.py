@@ -1,20 +1,35 @@
 from flask import request, jsonify
 from datetime import datetime
+from bson import ObjectId
+from flask import g
+
 from db import get_db
 from dateutil import parser
 
+from validation.note_schemas import SaveNoteSchema
+from validation import validate_json
+
 
 def save_note():
-    data = request.get_json()
-    content = (data.get("content") or "").strip()
+    data = request.get_json() or {}
 
-    if not content:
-        return jsonify({"error": "Content is required"}), 400
+    # -------------------------
+    # Server-side validation
+    # -------------------------
+    schema = SaveNoteSchema()
+    error = validate_json(schema, data)
+    if error:
+        return error
+
+    note_text = data["note_text"]
+    title = data.get("title", "")
 
     db = get_db()
     note = {
-        "content": content,
+        "note_text": note_text,
+        "title": title,
         "created_at": datetime.utcnow(),
+        "created_by": ObjectId(g.user_id),   # OWASP: BOLA prevention
     }
 
     result = db.notes.insert_one(note)
@@ -30,30 +45,32 @@ def normalize_timestamp(value):
     if not value:
         return None
 
-    # If it's already a datetime object
     if hasattr(value, "isoformat"):
         return value.isoformat()
 
-    # If it's a string, try parsing to datetime and re-serialising
     try:
         parsed = parser.parse(str(value))
         return parsed.isoformat()
     except Exception:
-        # Fallback: return as string
         return str(value)
 
 
 def get_all_notes():
     try:
         db = get_db()
-        cursor = db.notes.find().sort("created_at", -1)
+
+        # -------------------------
+        # Restrict to logged-in user
+        # -------------------------
+        cursor = db.notes.find({"created_by": ObjectId(g.user_id)}).sort("created_at", -1)
 
         notes = []
         for note in cursor:
             notes.append({
                 "id": str(note["_id"]),
-                "content": note.get("content", ""),
-                "created_at": normalize_timestamp(note.get("created_at"))
+                "title": note.get("title", ""),
+                "note_text": note.get("note_text", ""),
+                "created_at": normalize_timestamp(note.get("created_at")),
             })
 
         return jsonify(notes), 200
