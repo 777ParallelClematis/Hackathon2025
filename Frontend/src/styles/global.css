@@ -4,6 +4,16 @@
 html, body {
   font-family: "JetBrains Mono", monospace !important;
 }
+body {
+  background: #f5f5f5;
+  font-family: "JetBrains Mono", monospace;
+  color: #333;
+}
+
+/* Optional subtle texture to match navbar */
+body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='texture'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23texture)' opacity='0.015'/%3E%3C/svg%3E");
+}
 
 /* --------------------------------------------------
    Theme Variables (Your blue → cyan → violet palette)
