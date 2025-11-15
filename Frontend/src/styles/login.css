@@ -156,3 +156,44 @@
     font-size: 2.2rem;
   }
 }
+
+/* --------------------------------------------------
+   LIGHT MODE OVERRIDES FOR LOGIN PAGE
+-------------------------------------------------- */
+
+body.light .login-card {
+  background: rgba(255, 252, 245, 0.85); /* warm translucent paper */
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(205, 190, 170, 0.6);
+  box-shadow: 0 10px 35px rgba(150,120,90,0.15);
+}
+
+body.light .login-left,
+body.light .login-title,
+body.light .login-subtitle {
+  color: var(--text);
+}
+
+/* Form panel */
+body.light .login-form {
+  background: rgba(255, 251, 240, 0.9);
+  border: 1px solid rgba(205, 190, 170, 0.55);
+}
+
+/* Inputs */
+body.light .login-input {
+  background: #fffdfa;
+  border: 1px solid rgba(205, 190, 170, 0.7);
+  color: var(--text);
+}
+
+body.light .login-input:focus {
+  background: #fffefb;
+  border-color: var(--accent);
+}
+
+/* Button */
+body.light .login-button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+  color: #3a1e25; /* dark warm brown for contrast */
+}

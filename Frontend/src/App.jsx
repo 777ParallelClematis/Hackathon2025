@@ -25,6 +25,11 @@ function AuthedLayout() {
   );
 }
 
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+
 // Protect internal pages
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();

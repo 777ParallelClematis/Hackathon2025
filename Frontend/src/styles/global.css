@@ -28,8 +28,9 @@
   --r-lg: 20px;
 
   /* Accents */
-  --accent: #5ccfe6;
-  --accent-soft: #7aa0b2;
+--accent: #ff6495;       /* modern muted pink */
+--accent-soft: #ff8fb0;  /* softer variant */
+
 }
 
 /* --------------------------------------------------
@@ -131,4 +132,27 @@ textarea.form-control {
 .btn-primary:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+/* --------------------------------------------------
+   TRUE CREAM / PAPER LIGHT MODE
+   Apply via: <body class="light">
+-------------------------------------------------- */
+
+body.light {
+  /* BACKGROUNDS — warm paper spectrum */
+  --bg: #faf5e8;            /* warm cream */
+  --surface: #fffdf7;       /* paper-white */
+  --surface-alt: #f6eddc;   /* soft oatmeal panel */
+
+  /* BORDERS — warm beige */
+  --border: #e2d5c3;
+
+  /* TYPOGRAPHY — warm dark umber */
+  --text: #2a241c;
+  --subtext: #5c5247;
+
+  /* ACCENTS — pink stays the same */
+  --accent: #ff6495;
+  --accent-soft: #ff8fb0;
 }

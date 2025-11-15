@@ -88,6 +88,24 @@ export default function Login() {
           </p>
         </form>
 
+        <button
+  type="button"
+  onClick={() => document.body.classList.toggle("light")}
+  style={{
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    padding: "6px 12px",
+    background: "var(--accent)",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer"
+  }}
+>
+  Toggle Theme
+</button>
+
+
       </div>
     </div>
   );

@@ -1,49 +1,46 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth.jsx";
 import "../styles/navbar.css";
 
 export default function Navbar() {
-  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  function handleLogout() {
-    console.log("Logging out...");
-    navigate("/");
+  function toggleTheme() {
+    document.body.classList.toggle("light");
   }
 
   return (
-    <nav className="nb-nav">
+   <nav className="nb-nav">
+  
+  {/* LEFT BRAND */}
+  <div className="nb-left">
+    <div className="nb-brand">Manumatic</div>
+  </div>
 
-      {/* LEFT — App Name */}
-      <div className="nb-brand">ManuMatic</div>
+  {/* CENTER NAV ITEMS */}
+<div className="nb-center">
+  <Link to="/notes" className="nb-item">In Class</Link>
+  <Link to="/learn" className="nb-item">Revision</Link>
+  <Link to="/notebook" className="nb-item">Notes</Link>
+</div>
 
-      {/* CENTER MENU */}
-      <div className="nb-center">
-        <NavLink 
-          to="/notes"
-          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
-        >
-          Notes
-        </NavLink>
 
-        <NavLink 
-          to="/learn"
-          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
-        >
-          Revision
-        </NavLink>
+  {/* RIGHT SIDE (toggle + logout) */}
+  <div className="nb-right">
+    <button
+      className="nb-toggle"
+      onClick={() => document.body.classList.toggle("light")}
+      aria-label="Toggle theme"
+    >
+      🌓
+    </button>
 
-        <NavLink 
-          to="/notebook"
-          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
-        >
-          Notebook
-        </NavLink>
-      </div>
+    <button className="nb-logout" onClick={logout}>
+      Logout
+    </button>
+  </div>
 
-      {/* RIGHT — Logout */}
-      <button className="nb-logout" onClick={handleLogout}>
-        Logout
-      </button>
+</nav>
 
-    </nav>
   );
 }
