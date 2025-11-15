@@ -14,7 +14,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 GEMINI_MODEL = 'gemini-2.5-flash'
 
 # NEW: MongoDB Settings
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/') # Fallback for local testing
-MONGO_DB_NAME = 'notebuddy'
+MONGO_URI = os.getenv("MONGO_URI")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "notebuddy")
 MONGO_REF_COLLECTION = 'notes' 
 MONGO_GRADES_COLLECTION = 'assessment'

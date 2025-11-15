@@ -3,18 +3,25 @@ import "../styles/notes.css";
 
 export default function InClassNotes() {
   const [text, setText] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [loadingQ, setLoadingQ] = useState(false);
 
-  // ----- LIVE STATS -----
+  // ---------------------------
+  // Live Stats
+  // ---------------------------
   const stats = useMemo(() => {
-    const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+    const trimmed = text.trim();
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
     const chars = text.length;
-    const readingMin = Math.max(1, Math.ceil(words / 200));   // avg reading speed
-    const speakingSec = Math.ceil(words / 2.5);                // avg speaking speed
+    const readingMin = Math.max(1, Math.ceil(words / 200));
+    const speakingSec = Math.ceil(words / 2.5);
 
     return { words, chars, readingMin, speakingSec };
   }, [text]);
 
-  // ----- SAVE ACTION -----
+  // ---------------------------
+  // Save Notes to DB
+  // ---------------------------
   async function handleSave() {
     if (!text.trim()) return;
 
@@ -22,57 +29,110 @@ export default function InClassNotes() {
       await fetch("http://127.0.0.1:8080/api/notes/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text })
+        body: JSON.stringify({ content: text }),
       });
-
-      console.log("Saved to notebook");
     } catch (err) {
-      console.error(err);
+      console.error("Save error:", err);
     }
   }
 
+  // ---------------------------
+  // Generate Questions (via backend)
+  // ---------------------------
+  async function generateQuestions() {
+    if (!text.trim()) return;
+
+    setLoadingQ(true);
+    setQuestions([]);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/ai/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        console.error("Could not parse JSON from backend");
+        setLoadingQ(false);
+        return;
+      }
+
+      if (data?.questions && Array.isArray(data.questions)) {
+        setQuestions(data.questions);
+      } else {
+        console.error("Backend returned unexpected format:", data);
+      }
+    } catch (err) {
+      console.error("AI Request Failed:", err);
+    }
+
+    setLoadingQ(false);
+  }
+
+  // ---------------------------
+  // Render
+  // ---------------------------
   return (
-    <div className="ic-page container-fluid">
-      <div className="row h-100">
+    <div className="ic-page">
+      <div className="ic-wrapper position-relative">
 
-        <div className="col-12 d-flex flex-column position-relative">
+        {/* Header Bar */}
+        <div className="ic-header">
+          <h2>In-Class Notes</h2>
 
-          {/* HEADER BAR */}
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2 className="mb-0">In-Class Notes</h2>
-
-            <button
-              className="btn ic-save-btn"
-              onClick={handleSave}
-            >
+          <div className="ic-header-buttons">
+            <button className="btn ic-save-btn" onClick={handleSave}>
               Save to Notebook
             </button>
+
+            <button
+              className="btn ic-generate-btn"
+              onClick={generateQuestions}
+              disabled={loadingQ}
+            >
+              {loadingQ ? "Generating..." : "Generate Questions"}
+            </button>
           </div>
+        </div>
 
-          {/* MAIN TEXTAREA */}
-          <textarea
-            className="form-control flex-grow-1 ic-textarea"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Start typing..."
-          />
+        {/* Main Typing Area */}
+        <textarea
+          className="ic-textarea"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Start typing..."
+        />
 
-          {/* QUESTIONS OVERLAY (existing) */}
-          <div className="ic-questions-overlay">
-            <h5 className="ic-q-title">Questions</h5>
-            <div className="ic-q-scroll"></div>
+        {/* Questions Overlay */}
+        <div className="ic-questions-overlay">
+          <h5 className="ic-q-title">Questions</h5>
+
+          <div className="ic-q-scroll">
+            {!loadingQ && questions.length === 0 && (
+              <div className="ic-q-empty">No questions yet</div>
+            )}
+
+            {loadingQ && <div className="ic-q-empty">Working...</div>}
+
+            {questions.map((q, i) => (
+              <div key={i} className="ic-q-item">
+                • {q}
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* NEW STATS OVERLAY — bottom-left */}
-          <div className="ic-stats-overlay">
-            <h5 className="ic-stats-title">Stats</h5>
-
-            <div className="ic-stats-item">Words: {stats.words}</div>
-            <div className="ic-stats-item">Characters: {stats.chars}</div>
-            <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
-            <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
-          </div>
-
+        {/* Stats Overlay */}
+        <div className="ic-stats-overlay">
+          <h5 className="ic-stats-title">Stats</h5>
+          <div className="ic-stats-item">Words: {stats.words}</div>
+          <div className="ic-stats-item">Characters: {stats.chars}</div>
+          <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
+          <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
         </div>
       </div>
     </div>

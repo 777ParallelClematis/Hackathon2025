@@ -1,15 +1,17 @@
 from pymongo import MongoClient
-import os
-from dotenv import load_dotenv
+from config import MONGO_URI, MONGO_DB_NAME
+import certifi
 
-load_dotenv()
+_client = None
 
 def get_db():
-    uri = os.getenv("MONGO_URI")
-    if not uri:
-        raise Exception("MONGO_URI not loaded from .env")
+    global _client
+    if _client is None:
+        extra = {}
+        # If using Atlas, enable TLS with certifi CA bundle
+        if MONGO_URI.startswith("mongodb+srv://") or "mongodb.net" in MONGO_URI:
+            extra["tlsCAFile"] = certifi.where()
 
-    client = MongoClient(uri)
-    return client["notebuddy"]
+        _client = MongoClient(MONGO_URI, **extra)
 
-print("DEBUG MONGO_URI:", os.getenv("MONGO_URI"))
+    return _client[MONGO_DB_NAME]

@@ -1,4 +1,4 @@
-# models/classifier.py (Only the class structure is needed, logic is the same)
+
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from config import MINILM_MODEL_NAME, SIMILARITY_THRESHOLD

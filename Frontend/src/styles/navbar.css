@@ -5,31 +5,60 @@
   --hover-ivory: #ffffff;
 }
 
-/* NAVBAR CONTAINER */
+/* --------------------------------------------------
+   NAVBAR CONTAINER
+-------------------------------------------------- */
 .nb-nav {
   background: var(--bg-charcoal);
-
-  /* subtle noise texture */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
 
-  padding: 28px 40px; /* bigger bar */
+  padding: 28px 40px;
   display: flex;
-  justify-content: center; /* center menu */
   align-items: center;
-
-  position: relative;
+  justify-content: space-between; /* LEFT – CENTER – RIGHT */
 
   font-family: "JetBrains Mono", monospace;
-  font-size: 1.35rem; /* increased */
+  font-size: 1.35rem;
+  position: relative;
 }
 
-/* CENTER MENU */
+/* --------------------------------------------------
+   LEFT / CENTER / RIGHT GROUPS
+-------------------------------------------------- */
+.nb-left {
+  flex: 1;
+}
+
 .nb-center {
+  flex: 2;
   display: flex;
+  justify-content: center;
   gap: 60px;
 }
 
-/* NAV LINKS */
+.nb-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 22px;
+}
+
+/* --------------------------------------------------
+   BRAND
+-------------------------------------------------- */
+.nb-brand {
+  color: var(--text-ivory);
+  font-weight: 600;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* --------------------------------------------------
+   NAV LINKS
+-------------------------------------------------- */
 .nb-item {
   color: var(--text-ivory-dim);
   text-decoration: none;
@@ -41,12 +70,89 @@
   color: var(--hover-ivory);
   text-shadow: 0 0 6px rgba(255,255,255,0.25);
 }
+.nb-toggle:hover {
+  border-color: var(--accent2);
+  background: rgba(92, 207, 230, 0.12); /* subtle turquoise glaze */
+  color: var(--accent2);
+}
+.nb-nav {
+  border-bottom: 2px solid var(--accent2-soft);
+}
 
-/* LOGOUT BUTTON */
+
+.nb-item {
+  color: var(--text-ivory-dim);
+  text-decoration: none;
+  transition: 0.25s ease;
+  font-weight: 500;
+
+  padding: 6px 12px;          /* ← added to base state */
+  border-radius: 6px;
+}
+
+.nb-item:hover {
+  color: var(--hover-ivory);
+  text-shadow: 0 0 6px rgba(255,255,255,0.25);
+}
+
+/* ACTIVE NAV ITEM */
+/* ACTIVE NAV ITEM — with pink accent border */
+.nb-item.active {
+  background: var(--text-ivory);
+  color: var(--bg-charcoal);
+
+  border: 2px solid var(--accent);   /* pink accent border */
+  border-radius: 8px;
+
+  padding: 6px 14px;                 /* extra room for border */
+  font-weight: 600;
+
+  text-shadow: none;
+  transition: 0.25s ease;
+}
+
+
+
+/* --------------------------------------------------
+   THEME TOGGLE BUTTON
+-------------------------------------------------- */
+.nb-toggle {
+  width: 42px;
+  height: 42px;
+  background: transparent;
+  border: 1px solid var(--text-ivory-dim);
+  border-radius: 50%;
+  color: var(--text-ivory);
+  cursor: pointer;
+
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.25s ease;
+}
+
+.nb-toggle:hover {
+  color: var(--hover-ivory);
+  border-color: var(--hover-ivory);
+  background: rgba(255,255,255,0.06);
+}
+
+/* Light mode adaptation */
+body.light .nb-toggle {
+  background: rgba(255,255,255,0.45);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.light .nb-toggle:hover {
+  background: rgba(255,255,255,0.65);
+}
+
+/* --------------------------------------------------
+   LOGOUT BUTTON
+-------------------------------------------------- */
 .nb-logout {
-  position: absolute;
-  right: 40px;
-
   background: transparent;
   border: 1px solid var(--text-ivory-dim);
   color: var(--text-ivory);
@@ -64,27 +170,4 @@
   border-color: var(--hover-ivory);
   color: var(--hover-ivory);
   background: rgba(255,255,255,0.06);
-}
-
-/* ACTIVE NAV ITEM — inverted colors */
-.nb-item.active {
-  color: var(--bg-charcoal);
-  background: var(--text-ivory);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-shadow: none;
-}
-
-/* LEFT BRAND NAME */
-.nb-brand {
-  position: absolute;
-  left: 40px;
-  color: var(--text-ivory);
-  font-weight: 600;
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-family: "JetBrains Mono", monospace;
-  user-select: none;
 }

@@ -22,10 +22,15 @@ from config import (
     MONGO_GRADES_COLLECTION,
 )
 
+# Blueprints
 from routes.user_routes import user_routes
 from routes.notes_routes import notes_routes
+from routes.ai_routes import ai_routes
+
+# Database
 from db import get_db
 
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -36,6 +41,7 @@ CORS(app)
 # ----------------------------
 app.register_blueprint(user_routes, url_prefix="/api/users")
 app.register_blueprint(notes_routes, url_prefix="/api/notes")
+app.register_blueprint(ai_routes, url_prefix="/api/ai")
 
 
 # ----------------------------
@@ -329,6 +335,17 @@ Rules:
             return "\n".join(fallback_lines)     
     
 class MongoReferenceFetcher:
+    """
+    Helper for talking to MongoDB:
+
+    - ref_collection: where your reference notes live (e.g. 'notes')
+      with fields: { _id, title, note_text, created_by, ... }
+
+    - grades_collection: where graded attempts are stored
+      (e.g. 'student_attempts')
+    """
+
+    # Fallback reference text if we truly can't find anything for a topic
     FALLBACK_REFERENCE_TEXT = (
         "A queue follows the First-In, First-Out (FIFO) principle. "
         "Add at rear, remove from front."
@@ -338,14 +355,15 @@ class MongoReferenceFetcher:
         self.client = MongoClient(MONGO_URI)
         self.db = self.client[MONGO_DB_NAME]
 
-        # Reference collection is 'notes' (source of 500-word standard)
+        # Reference collection is 'notes' (source of standard answers)
         self.ref_collection = self.db[MONGO_REF_COLLECTION]
 
         # Grades collection is 'student_attempts' (destination for results)
         self.grades_collection = self.db[MONGO_GRADES_COLLECTION]
 
-    # ---------- PUBLIC API ----------
-
+    # ------------------------------------------------------------------
+    # PUBLIC: FETCH BY TITLE (kept for backward compatibility)
+    # ------------------------------------------------------------------
     def get_reference_standard(self, note_title: str) -> str:
         """
         Returns the reference 'note_text' for a given title.
@@ -397,8 +415,38 @@ class MongoReferenceFetcher:
         )
         return document["note_text"]
 
-    # ---------- INTERNAL HELPERS ----------
+    # ------------------------------------------------------------------
+    # PUBLIC: FETCH BY NOTE ID  (preferred path for /classify, /analyze)
+    # ------------------------------------------------------------------
+    def get_reference_by_id(self, note_id: str) -> tuple[str, str]:
+        """
+        Look up a note by its _id and return (note_text, title).
 
+        If anything fails, fall back to a safe reference text and 'Unknown title'.
+        """
+        if not note_id:
+            print("[WARN] get_reference_by_id called with empty note_id.")
+            return self.FALLBACK_REFERENCE_TEXT, "Unknown title"
+
+        try:
+            query_id = ObjectId(note_id) if ObjectId.is_valid(note_id) else note_id
+            doc = self.ref_collection.find_one({"_id": query_id})
+        except Exception as e:
+            print(f"[ERROR] Mongo lookup by id failed: {e}")
+            return self.FALLBACK_REFERENCE_TEXT, "Unknown title"
+
+        if not doc or "note_text" not in doc:
+            print(f"[WARN] No note_text found for note_id={note_id}, using fallback.")
+            return self.FALLBACK_REFERENCE_TEXT, "Unknown title"
+
+        note_text = doc["note_text"]
+        title = doc.get("title", "Untitled note")
+        print(f"[INFO] Using note_id={note_id} with stored title='{title}'.")
+        return note_text, title
+
+    # ------------------------------------------------------------------
+    # INTERNAL: FUZZY TITLE MATCHING
+    # ------------------------------------------------------------------
     def find_best_matching_title(self, note_title: str) -> str | None:
         """
         Return the title from DB that best matches the provided title
@@ -445,10 +493,14 @@ class MongoReferenceFetcher:
         title = re.sub(r"\s+", " ", title)  # collapse multiple spaces
         return title
 
-    # ---------- SAVE GRADES ----------
-
+    # ------------------------------------------------------------------
+    # PUBLIC: SAVE GRADES
+    # ------------------------------------------------------------------
     def save_grade_result(self, grade_data: dict) -> bool:
-        """Inserts the final grading result into the student_attempts collection."""
+        """
+        Inserts the final grading result into the student_attempts
+        (MONGO_GRADES_COLLECTION) collection.
+        """
         grade_data["graded_at"] = datetime.utcnow()
         try:
             self.grades_collection.insert_one(grade_data)
@@ -459,7 +511,7 @@ class MongoReferenceFetcher:
             return True
         except Exception as e:
             print(f"Error saving grade to DB: {e}")
-            return False
+            return False         
 
 
 db_fetcher = MongoReferenceFetcher()
@@ -505,9 +557,11 @@ def prepare_grade_data(
 def classify():
     """
     Runs the MiniLM classification and saves the result.
-    API Contract: Expects JSON body:
+
+    API body (new, more flexible):
       {
-        "title": "Some note title",
+        "note_id": "<Mongo _id as string>",   # preferred
+        "title": "Some note title",           # optional, fallback
         "student_id": "some_student_id",
         "student_response": "Their answer..."
       }
@@ -520,31 +574,37 @@ def classify():
             "message": "Invalid JSON body"
         }), 400
 
+    note_id = data.get("note_id")
     note_title = data.get("title")
     student_id = data.get("student_id")
     student_response = data.get("student_response")
 
-    # Basic validation
-    if not note_title or not student_id or not student_response:
+    # ✅ validation: we now require (note_id OR title)
+    if (not note_id and not note_title) or not student_id or not student_response:
         return jsonify({
             "status": "error",
-            "message": "Missing title, student_id, or student_response"
+            "message": "Missing note_id/title, student_id, or student_response"
         }), 400
 
-    # 1. FETCH REFERENCE STANDARD FROM MONGO
+    # 1️⃣ Fetch reference, preferring note_id
     try:
-        reference_standard = db_fetcher.get_reference_standard(note_title)
+        if note_id:
+            reference_standard, canonical_title = db_fetcher.get_reference_by_id(note_id)
+            effective_title = canonical_title or note_title or "Untitled note"
+        else:
+            reference_standard = db_fetcher.get_reference_standard(note_title)
+            effective_title = note_title or "Untitled note"
     except Exception as e:
-        print(f"[ERROR] Failed to fetch reference for '{note_title}': {e}")
+        print(f"[ERROR] Failed to fetch reference: {e}")
         return jsonify({
             "status": "error",
             "message": "Failed to fetch reference standard from database."
         }), 500
 
-    # 2. RUN MINI-LM CLASSIFICATION (placeholder)
+    # 2️⃣ MiniLM classification
     try:
         is_correct, score = classifier.classify_response_on_demand(
-            note_title,
+            effective_title,
             student_response,
             reference_standard,
         )
@@ -562,11 +622,11 @@ def classify():
         "feedback": f"MiniLM classified with similarity score: {score:.4f}",
     }
 
-    # 3. SAVE RESULT TO MONGO
+    # 3️⃣ Save to DB (using canonical title)
     try:
         grade_data = prepare_grade_data(
             student_id=student_id,
-            title=note_title,
+            title=effective_title,
             student_response=student_response,
             score=classification_result["score"],
             classification=classification_result["classification"],
@@ -576,61 +636,78 @@ def classify():
         db_fetcher.save_grade_result(grade_data)
     except Exception as e:
         print(f"[WARN] Failed to save grade result: {e}")
-        # Don't block the response just because saving failed
 
     return jsonify(classification_result), 200
-
-
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
     """
     Runs MiniLM and then uses Gemini for detailed analysis and suggestions.
-    API Contract: Expects {title, student_id, student_response}
-    """
-    data = request.get_json()
 
+    Body:
+      {
+        "note_id": "<Mongo _id as string>",   # preferred
+        "title": "Some note title",           # optional
+        "student_id": "some_student_id",
+        "student_response": "Their answer..."
+      }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid JSON body"
+        }), 400
+
+    note_id = data.get("note_id")
     note_title = data.get("title")
     student_id = data.get("student_id")
     student_response = data.get("student_response")
+    print("[DEBUG] Backend received note_id:", note_id)
 
-    if not note_title or not student_id or not student_response:
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": "Missing title, student_id, or student_response",
-                }
-            ),
-            400,
-        )
+    if (not note_id and not note_title) or not student_id or not student_response:
+        return jsonify({
+            "status": "error",
+            "message": "Missing note_id/title, student_id, or student_response"
+        }), 400
 
-    reference_standard = db_fetcher.get_reference_standard(note_title)
+    # 1️⃣ Fetch reference (prefer id)
+    if note_id:
+        reference_standard, canonical_title = db_fetcher.get_reference_by_id(note_id)
+        effective_title = canonical_title or note_title or "Untitled note"
+    else:
+        reference_standard = db_fetcher.get_reference_standard(note_title)
+        effective_title = note_title or "Untitled note"
 
+    # 2️⃣ MiniLM score (used as a rough guide for Gemini)
     is_correct, score = classifier.classify_response_on_demand(
-        note_title,
+        effective_title,
         student_response,
         reference_standard,
     )
+
+    # 3️⃣ Gemini analysis + cheat sheet
     detailed_feedback, keywords, cheat_sheet = gemini_helper.analyze_and_suggest(
-    note_title,
-    student_response,
-    reference_standard,
-    score,
-)
+        effective_title,
+        student_response,
+        reference_standard,
+        score,
+    )
 
     final_result = {
-    "source": "Gemini",
-    "score": float(f"{score:.4f}"),
-    "classification": "CORRECT" if is_correct else "INCORRECT",
-    "feedback": detailed_feedback,
-    "keywords": keywords,       # now: missing concepts
-    "cheat_sheet": cheat_sheet  # generated by Gemini
-}
+        "source": "Gemini",
+        "score": float(f"{score:.4f}"),
+        "classification": "CORRECT" if is_correct else "INCORRECT",
+        "feedback": detailed_feedback,
+        "keywords": keywords,
+        "cheat_sheet": cheat_sheet,
+    }
 
+    # 4️⃣ Save attempt
     grade_data = prepare_grade_data(
         student_id=student_id,
-        title=note_title,
+        title=effective_title,
         student_response=student_response,
         score=final_result["score"],
         classification=final_result["classification"],
@@ -641,7 +718,8 @@ def analyze():
     )
     db_fetcher.save_grade_result(grade_data)
 
-    return jsonify(final_result)
+    return jsonify(final_result), 200
+
 
 
 @app.route("/")
@@ -697,11 +775,11 @@ def get_notes_for_student():
 if __name__ == "__main__":
     # Optional: quick DB ping
     try:
-        db_fetcher.client.admin.command("ping")
+        db = get_db()
+        db.command("ping")
         print(f"Successfully connected to MongoDB database: {MONGO_DB_NAME}")
     except Exception as e:
         print(f"Could not connect to MongoDB. Check MONGO_URI. Error: {e}")
-
     # Use Waitress in production, binding to Render's PORT on 0.0.0.0
     from waitress import serve
     port = int(os.getenv("PORT", 8080))  # Render sets PORT automatically
