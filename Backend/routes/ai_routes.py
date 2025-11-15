@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 import os
 import requests
+
 from middleware.auth import require_auth
+from middleware.rate_limit import limiter
 
 # Validation
 from validation.ai_schemas import AIQuestionSchema
@@ -15,7 +17,8 @@ MODEL_NAME = "moonshotai/Kimi-K2-Thinking:novita"
 
 
 @ai_routes.route("/generate-questions", methods=["POST"])
-@require_auth
+@limiter.limit("10 per minute")     # <--- Rate limiting added
+@require_auth                       # <--- Must remain AFTER limiter
 def generate_questions():
     try:
         data = request.get_json() or {}
@@ -65,9 +68,6 @@ def generate_questions():
         hf_res = requests.post(HF_MODEL_URL, headers=headers, json=payload, timeout=30)
         print("HF status:", hf_res.status_code)
 
-        # -------------------------
-        # HF API error handling
-        # -------------------------
         if hf_res.status_code != 200:
             try:
                 err = hf_res.json()
@@ -89,9 +89,6 @@ def generate_questions():
         print(reply)
         print("-------------------------\n")
 
-        # -------------------------
-        # Extract questions
-        # -------------------------
         questions = []
         for line in reply.split("\n"):
             clean = line.strip()
@@ -101,7 +98,6 @@ def generate_questions():
 
         questions = questions[:3]
 
-        # Fallback if model fails
         if len(questions) < 3:
             print("!!! FALLBACK USED !!!")
             questions = [
