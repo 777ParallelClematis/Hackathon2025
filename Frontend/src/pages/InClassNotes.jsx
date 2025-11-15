@@ -37,6 +37,13 @@ export default function InClassNotes() {
   }
 
   // ---------------------------
+  // Delete a single question
+  // ---------------------------
+  function removeQuestion(index) {
+    setQuestions((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  // ---------------------------
   // Generate Questions (via backend)
   // ---------------------------
   async function generateQuestions() {
@@ -111,7 +118,7 @@ export default function InClassNotes() {
         <div className="ic-questions-overlay">
           <h5 className="ic-q-title">Questions</h5>
 
-          <div className="ic-q-scroll">
+          <div className="ic-q-bubbles">
             {!loadingQ && questions.length === 0 && (
               <div className="ic-q-empty">No questions yet</div>
             )}
@@ -119,8 +126,14 @@ export default function InClassNotes() {
             {loadingQ && <div className="ic-q-empty">Working...</div>}
 
             {questions.map((q, i) => (
-              <div key={i} className="ic-q-item">
-                • {q}
+              <div key={i} className="ic-q-bubble">
+                <span className="ic-q-text">{q}</span>
+                <button
+                  className="ic-q-close"
+                  onClick={() => removeQuestion(i)}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
@@ -134,6 +147,7 @@ export default function InClassNotes() {
           <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
           <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
         </div>
+
       </div>
     </div>
   );

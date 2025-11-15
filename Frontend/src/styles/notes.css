@@ -200,3 +200,49 @@
     bottom: 180px;
   }
 }
+
+
+/* ------------------------------- */
+/* Question Bubbles                */
+/* ------------------------------- */
+
+.ic-q-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.ic-q-bubble {
+  background: #f5eadc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: inherit;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  border: 1px solid #e3d6c5;
+}
+
+.ic-q-text {
+  flex: 1;
+  padding-right: 8px;
+  line-height: 1.4;
+}
+
+.ic-q-close {
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0 4px;
+  color: #444;
+  transition: 0.15s ease;
+}
+
+.ic-q-close:hover {
+  color: #b00020;
+  transform: scale(1.15);
+}

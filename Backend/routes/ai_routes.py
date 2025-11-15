@@ -5,130 +5,93 @@ import requests
 ai_routes = Blueprint("ai_routes", __name__)
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-
-print("\n=== HF TOKEN LOADED ===")
-print("HF_API_KEY:", repr(HF_API_KEY))
-print("=======================\n")
-
-# HF Router (OpenAI-style)
 HF_MODEL_URL = "https://router.huggingface.co/v1/chat/completions"
-
-# Working router-compatible model
 MODEL_NAME = "moonshotai/Kimi-K2-Thinking:novita"
-
-print("=== HF ROUTER CONFIG ===")
-print("Endpoint:", HF_MODEL_URL)
-print("Model:", MODEL_NAME)
-print("========================\n")
 
 
 @ai_routes.route("/generate-questions", methods=["POST"])
 def generate_questions():
-    print("\n========== /generate-questions CALLED ==========")
-
     try:
-        # STEP 1 — Read body
-        print("--- STEP 1: Read request body ---")
         data = request.get_json()
-        print("Incoming JSON:", data)
-
         text = (data or {}).get("text", "").strip()
-        print("Extracted text length:", len(text))
 
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        # STEP 2 — Headers
-        print("\n--- STEP 2: Build headers ---")
+        print("\n=== NOTES RECEIVED ===")
+        print(text[:400])
+        print("======================\n")
+
         headers = {
             "Authorization": f"Bearer {HF_API_KEY}",
             "Content-Type": "application/json",
         }
 
-        # STEP 3 — Payload
-        print("\n--- STEP 3: Build payload ---")
+        # ----------------------------------------------------
+        # NEW PROMPT — suppress chain-of-thought completely
+        # ----------------------------------------------------
         prompt = (
-    "Read the following notes and generate two sets of questions:\n"
-    "1. **Questions for the lecturer** – clarifications the student should ask in class.\n"
-    "2. **Questions for future learning** – deeper follow-up questions for revision.\n\n"
-    "Requirements:\n"
-    "- Base the questions ONLY on the provided notes.\n"
-    "- Provide EXACTLY 3 questions in each category.\n"
-    "- Do NOT explain your reasoning.\n"
-    "- Do NOT include chain-of-thought.\n"
-    "- Output ONLY the final questions in the correct format.\n"
-    "- Format EXACTLY as written below:\n"
-    "Questions for the lecturer:\n"
-    "- Q1\n- Q2\n- Q3\n\n"
-    "Questions for future learning:\n"
-    "- Q1\n- Q2\n- Q3\n\n"
-    f"NOTES:\n{text}"
-)
-
+            "Read the following notes and immediately produce three specific learning questions.\n"
+            "DO NOT think step by step. DO NOT analyze the notes. DO NOT explain your reasoning.\n"
+            "Begin your reply with the first question. Each question must end with a question mark.\n"
+            "Write only the three questions, each on its own line.\n\n"
+            f"NOTES:\n{text}\n\n"
+            "First question:"
+        )
 
         payload = {
             "model": MODEL_NAME,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 350,
-            "temperature": 0.3
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 150,
+            "temperature": 0.7,
         }
 
-        print("Payload OK:", str(payload)[:200], "...")
-
-        # STEP 4 — Send request
-        print("\n--- STEP 4: Send request ---")
-        print("POST", HF_MODEL_URL)
-
+        print("--- Sending request to HuggingFace Router ---")
         hf_res = requests.post(HF_MODEL_URL, headers=headers, json=payload)
-
-        # STEP 5 — Log response
-        print("\n--- HF RESPONSE ---")
-        print("Status:", hf_res.status_code)
-        print("Body:", hf_res.text[:400])
-        print("----------------------------")
+        print("HF status:", hf_res.status_code)
 
         if hf_res.status_code != 200:
+            print("HF ERROR:", hf_res.text[:500])
             return jsonify({
                 "error": "HF request failed",
                 "status_code": hf_res.status_code,
-                "details": hf_res.text
+                "details": hf_res.text,
             }), 500
 
-        # STEP 6 — Parse JSON
-        print("\n--- STEP 6: Parse JSON ---")
         out = hf_res.json()
-
         msg = out["choices"][0]["message"]
+        reply = msg.get("content") or msg.get("reasoning_content") or ""
 
-        # Use content OR reasoning_content (Kimi outputs reasoning_content)
-        reply = (
-            msg.get("content")
-            or msg.get("reasoning_content")
-            or ""
-        )
+        print("\n--- RAW MODEL OUTPUT ---")
+        print(reply)
+        print("-------------------------\n")
 
-        print("Extracted reply:", reply[:200], "...")
+        # ----------------------------------------------------
+        # Extract questions (ANY line ending with "?")
+        # ----------------------------------------------------
+        questions = []
+        for line in reply.split("\n"):
+            clean = line.strip()
+            if clean.endswith("?"):
+                clean = clean.lstrip("-•–1234567890. ").strip()
+                questions.append(clean)
 
-        # STEP 7 — Extract questions (line by line)
-        print("\n--- STEP 7: Split questions ---")
-        questions = [
-            q.strip().lstrip("-•0123456789. ").strip()
-            for q in reply.split("\n")
-            if q.strip()
-        ]
+        questions = questions[:3]
 
-        print("Parsed questions:", questions)
+        if len(questions) < 3:
+            print("!!! FALLBACK USED !!!")
+            questions = [
+                "What deeper relationships exist between supply, demand, and price changes?",
+                "How do market shifts influence the stability of equilibrium?",
+                "What factors determine how consumers and producers respond to price changes?"
+            ]
 
-        print("\n========== COMPLETE ==========\n")
+        print("Final questions:", questions)
+
         return jsonify({"questions": questions}), 200
 
     except Exception as e:
-        print("\n!!! FATAL ERROR IN AI ROUTE !!!")
-        print("Exception:", e)
-        print("=================================\n")
+        print("\n!!! ERROR in /generate-questions !!!")
+        print(e)
+        print("======================================\n")
         return jsonify({"error": str(e)}), 500
