@@ -1,60 +1,39 @@
-/* Global font choice */
+/* --------------------------------------------------
+   GLOBAL TYPEFACE
+-------------------------------------------------- */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
 
-html, body {
-  font-family: "JetBrains Mono", monospace !important;
-}
-
-/* --------------------------------------------------
-   Theme Variables (Your blue → cyan → violet palette)
--------------------------------------------------- */
 :root {
-
-    --brand-gradient: linear-gradient(135deg, #00d4ff, #0066ff);
-  --accent-blue: #1a73e8;
-  --light-grey: #f5f5f5;
-  --card-bg: #ffffff;
-  --text-dark: #333333;
-  --border-light: #dddddd;
-
-  /* Light Mode Base */
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --text: #1f1f1f;
-  --subtext: #4a4a4a;
-  --border: #c8c8c8;
-
-  /* Accent Colors */
-  --accent-primary: #2979ff;     /* true blue */
-  --accent-secondary: #2ac0f7;   /* cyan */
-  --accent-purple: #7c3aed;      /* violet */
-
-  /* Brand Gradient */
-  --gradient-accent: linear-gradient(
-    135deg,
-    var(--accent-secondary),
-    var(--accent-primary),
-    var(--accent-purple)
-  );
-
-  /* Spacing System */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 32px;
-  --spacing-xl: 48px;
-
-  /* Border radii */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  /* Dark Mode Core */
+  --bg: #1a1a1a;
+  --surface: #242424;
+  --surface-alt: #2e2e2e;
+  --border: #3a3a3a;
 
   /* Typography */
-  --font-main: "Inter", system-ui, sans-serif;
+  --text: #f2eee4;
+  --subtext: #c8c3b8;
+  --font-main: "JetBrains Mono", monospace;
+
+  /* Spacing */
+  --xs: 4px;
+  --sm: 8px;
+  --md: 16px;
+  --lg: 32px;
+  --xl: 48px;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+
+  /* Accents */
+  --accent: #5ccfe6;
+  --accent-soft: #7aa0b2;
 }
 
 /* --------------------------------------------------
-   Reset + Base Styles
+   RESET + BASE
 -------------------------------------------------- */
 * {
   margin: 0;
@@ -66,65 +45,90 @@ html, body {
   width: 100%;
   height: 100%;
   background: var(--bg);
-  font-family: var(--font-main);
   color: var(--text);
+  font-family: var(--font-main);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Remove blue outline styling — we’ll define custom focus later */
-input, button {
-  font-family: var(--font-main);
-  outline: none;
+/* Subtle base texture */
+body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)' opacity='0.035'/%3E%3C/svg%3E");
 }
 
 /* --------------------------------------------------
-   Global Utility Classes
+   FORM BASE
 -------------------------------------------------- */
+input, button, textarea, select {
+  font-family: var(--font-main);
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
 
-/* Center any container’s children */
+/* --------------------------------------------------
+   UTILITIES
+-------------------------------------------------- */
+.flex { display: flex; }
+.flex-column { display: flex; flex-direction: column; }
+
 .full-center {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Basic Flex helpers */
-.flex {
-  display: flex;
-}
-
-.flex-column {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Reusable card style */
+/* --------------------------------------------------
+   CARDS
+-------------------------------------------------- */
 .card {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-}
-
-/* Inputs */
-.input {
-  padding: var(--spacing-sm);
+  background: var(--surface-alt);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
+  border-radius: var(--r-md);
+  padding: var(--lg);
+  color: var(--text);
 }
 
-/* Buttons */
-.btn {
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 1px solid var(--accent-primary);
+/* --------------------------------------------------
+   INPUTS
+-------------------------------------------------- */
+.input,
+input.form-control,
+textarea.form-control {
+  padding: var(--sm);
+  font-size: 1rem;
   background: var(--surface);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* --------------------------------------------------
+   BUTTONS
+-------------------------------------------------- */
+.btn {
+  padding: var(--sm) var(--md);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
+  transition: 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
 }
 
 .btn-primary {
-  color: white;
-  border: none;
-  background: var(--gradient-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent-soft);
+  color: #000;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }

@@ -15,11 +15,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  function login(jwtToken) {
+  function login(jwtToken, userId) {
     localStorage.setItem("token", jwtToken);
+    localStorage.setItem("_id", userId);   
     setToken(jwtToken);
     setIsAuthenticated(true);
   }
+  
 
   function logout() {
     localStorage.removeItem("token");

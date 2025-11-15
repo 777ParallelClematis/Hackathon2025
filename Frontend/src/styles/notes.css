@@ -116,3 +116,114 @@
     flex-direction: column;
   }
 }
+.ic-page {
+  height: calc(100vh - 110px);
+  padding-top: 20px;
+}
+
+/* MAIN TEXT AREA */
+.ic-page .ic-textarea {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-family: var(--font-main);
+  resize: none;
+  padding: 16px;
+}
+
+/* OVERLAY PANEL — bottom right of notes area */
+.ic-page .ic-questions-overlay {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+
+  width: 25%;                  /* approx 1/4 of screen */
+  max-height: 40vh;            /* controlled height */
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  z-index: 20;                 /* stays above textarea */
+  box-shadow: 0 0 12px rgba(0,0,0,0.55);
+}
+
+/* TITLE */
+.ic-page .ic-q-title {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+/* SCROLLING AREA */
+.ic-page .ic-q-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding-right: 6px;
+}
+
+.ic-page .ic-q-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.ic-page .ic-q-scroll::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+
+/* SAVE BUTTON — bigger + brand-consistent */
+.ic-page .ic-save-btn {
+  font-family: var(--font-main);
+  padding: 12px 26px;
+  background: var(--surface-alt);
+  border: 1px solid var(--text-ivory-dim);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1.05rem;
+  border-radius: var(--r-sm);
+  transition: 0.2s ease;
+}
+
+.ic-page .ic-save-btn:hover {
+  background: var(--surface);
+  border-color: var(--hover-ivory);
+}
+
+
+/* STATS OVERLAY — bottom-left */
+.ic-page .ic-stats-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+
+  width: 22%;               
+  max-width: 320px;
+  max-height: 30vh;
+
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  box-shadow: 0 0 12px rgba(0,0,0,0.55);
+
+  color: var(--text);
+}
+
+.ic-page .ic-stats-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.ic-page .ic-stats-item {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  color: var(--subtext);
+}

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { login as apiLogin } from "../services/api.js"; // adjust path if needed
+import "../styles/global.css";
+import "../styles/backgrounds.css";   // ← add this
 import "../styles/login.css";
 
 export default function Login() {
@@ -12,28 +15,22 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
+  
     try {
-      const res = await fetch("https://hackathon2025-jqk7.onrender.com/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        alert("Invalid credentials.");
-        return;
+      const data = await apiLogin({ email, password });
+  
+      if (data.token) {
+        // this still updates the React auth context
+        login(data.token);
       }
-
-      const data = await res.json();
-      login(data.token);
-
+  
       navigate("/notes");
     } catch (err) {
       console.error("Login error:", err);
-      alert("Login failed.");
+      alert("Login failed: " + err.message);
     }
   }
+  
 
   return (
     <div className="login-container">
@@ -81,7 +78,7 @@ export default function Login() {
 
           <p className="mt-3 text-center">
             Don’t have an account?{" "}
-            <Link to="/register" className="text-primary">Create one</Link>
+            <Link to="/register">Create one</Link>
           </p>
         </form>
 

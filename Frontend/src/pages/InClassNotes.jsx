@@ -1,69 +1,80 @@
-import "../styles/notes.css"; // keep for overrides only
+import { useState, useMemo } from "react";
+import "../styles/notes.css";
 
 export default function InClassNotes() {
+  const [text, setText] = useState("");
+
+  // ----- LIVE STATS -----
+  const stats = useMemo(() => {
+    const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+    const chars = text.length;
+    const readingMin = Math.max(1, Math.ceil(words / 200));   // avg reading speed
+    const speakingSec = Math.ceil(words / 2.5);                // avg speaking speed
+
+    return { words, chars, readingMin, speakingSec };
+  }, [text]);
+
+  // ----- SAVE ACTION -----
+  async function handleSave() {
+    if (!text.trim()) return;
+
+    try {
+      await fetch("http://127.0.0.1:8080/api/notes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text })
+      });
+
+      console.log("Saved to notebook");
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
-    <div className="container-fluid py-4">
+    <div className="ic-page container-fluid">
+      <div className="row h-100">
 
-      <div className="row g-4">
+        <div className="col-12 d-flex flex-column position-relative">
 
-        {/* LEFT SIDE */}
-        <div className="col-4">
+          {/* HEADER BAR */}
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="mb-0">In-Class Notes</h2>
 
-          {/* Controls */}
-          <div className="card p-3 mb-4">
-            <h5 className="mb-3">Controls</h5>
-
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <label className="fw-medium">Formatting</label>
-              <button className="btn btn-sm btn-outline-secondary">
-                OFF/ON
-              </button>
-            </div>
-
-            <div className="d-flex justify-content-between align-items-center">
-              <label className="fw-medium">Typos</label>
-              <button className="btn btn-sm btn-outline-secondary">
-                OFF/ON
-              </button>
-            </div>
+            <button
+              className="btn ic-save-btn"
+              onClick={handleSave}
+            >
+              Save to Notebook
+            </button>
           </div>
 
-          {/* Input box */}
-          <div className="mb-3">
-            <textarea
-              className="form-control"
-              placeholder="Classroom input..."
-              rows={12}
-            ></textarea>
+          {/* MAIN TEXTAREA */}
+          <textarea
+            className="form-control flex-grow-1 ic-textarea"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Start typing..."
+          />
+
+          {/* QUESTIONS OVERLAY (existing) */}
+          <div className="ic-questions-overlay">
+            <h5 className="ic-q-title">Questions</h5>
+            <div className="ic-q-scroll"></div>
           </div>
 
-          {/* Export button */}
-          <button className="btn btn-primary w-100">
-            Export to .txt
-          </button>
+          {/* NEW STATS OVERLAY — bottom-left */}
+          <div className="ic-stats-overlay">
+            <h5 className="ic-stats-title">Stats</h5>
 
-        </div>
-
-        {/* RIGHT SIDE */}
-        <div className="col-8 d-flex flex-column">
-
-          <h3 className="mb-3">Questions</h3>
-
-          <div className="card p-3 mb-4 flex-grow-0" style={{ maxHeight: "250px", overflowY: "auto" }}>
-            <div className="questions-list">
-              {/* API-generated questions */}
-            </div>
-          </div>
-
-          <div className="card p-3 flex-grow-1" style={{ overflowY: "auto" }}>
-            {/* Gemini-generated explanation */}
-            <div className="ai-output"></div>
+            <div className="ic-stats-item">Words: {stats.words}</div>
+            <div className="ic-stats-item">Characters: {stats.chars}</div>
+            <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
+            <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }

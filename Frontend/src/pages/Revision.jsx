@@ -1,9 +1,10 @@
-import { useState } from "react";
-import "../styles/revision.css"; // keep for overrides only
+import "../styles/revision.css";
+import { useState, useEffect } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://hackathon2025-jqk7.onrender.com/";
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
 
-// Small helper to call backend
+// Helpers
 async function postJSON(path, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -16,30 +17,65 @@ async function postJSON(path, body) {
   return data;
 }
 
+async function getJSON(path) {
+  const res = await fetch(`${API_URL}${path}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data;
+}
+
 export default function Revision() {
-  // 1) Notes from uploaded file (just for display)
+  // notes list for dropdown
+  const [notesList, setNotesList] = useState([]);
+  const [selectedNoteId, setSelectedNoteId] = useState("");
+
+  // text shown in Notes panel (from dropdown or upload)
   const [notesText, setNotesText] = useState("");
 
-  // 2) Student response typed by user
+  // student response typed by user
   const [studentResponse, setStudentResponse] = useState("");
 
-  // 3) Title + student id (title must match backend reference)
-  const [title, setTitle] = useState("Lady bugs"); // default example
-  const [studentId, setStudentId] = useState(
+  // title that gets sent to backend (matches note.title in DB)
+  const [title, setTitle] = useState("");
+
+  // student id (from localStorage or temp)
+  const [studentId] = useState(
     () => localStorage.getItem("student_id") || "TEMP-STUDENT-ID"
   );
 
-  // 4) Results from backend
+  // API results
   const [classifyResult, setClassifyResult] = useState(null);
   const [analyzeResult, setAnalyzeResult] = useState(null);
 
-  // 5) UI state
+  // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // --- handlers ---
+  // load notes for this student on mount
+  useEffect(() => {
+    async function loadNotes() {
+      try {
+        setError("");
+        const data = await getJSON(`/notes?student_id=${encodeURIComponent(studentId)}`);
+        const list = data.notes || [];
+        setNotesList(list);
 
-  // Upload notes file (.txt) → store text locally and show it
+        // optionally select first note by default
+        if (list.length > 0) {
+          const first = list[0];
+          setSelectedNoteId(first._id);
+          setTitle(first.title);
+          setNotesText(first.note_text || "");
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.message || "Could not load your notes.");
+      }
+    }
+    loadNotes();
+  }, [studentId]);
+
+  // file upload → override notesText (not saved to DB here, just for revision)
   function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -51,10 +87,25 @@ export default function Revision() {
     reader.readAsText(file);
   }
 
-  // Shared validation before hitting backend
+  // when dropdown selection changes
+  function handleNoteChange(e) {
+    const id = e.target.value;
+    setSelectedNoteId(id);
+
+    const note = notesList.find((n) => n._id === id);
+    if (note) {
+      setTitle(note.title);
+      setNotesText(note.note_text || "");
+    } else {
+      setTitle("");
+      setNotesText("");
+    }
+  }
+
+  // validation
   function validateBeforeSend() {
     if (!title.trim()) {
-      setError("Please enter a title for these notes (it should match the backend reference).");
+      setError("Please select a note title.");
       return false;
     }
     if (!studentResponse.trim()) {
@@ -77,7 +128,6 @@ export default function Revision() {
         student_id: studentId,
         student_response: studentResponse,
       };
-
       const data = await postJSON("/classify", payload);
       setClassifyResult(data);
     } catch (err) {
@@ -100,7 +150,6 @@ export default function Revision() {
         student_id: studentId,
         student_response: studentResponse,
       };
-
       const data = await postJSON("/analyze", payload);
       setAnalyzeResult(data);
     } catch (err) {
@@ -111,15 +160,22 @@ export default function Revision() {
     }
   }
 
+  // prefer analyze feedback if present, else fall back to classify
+  const activeFeedback = analyzeResult || classifyResult;
+
   return (
     <div className="container-fluid py-4">
-      {/* Top Row: Upload + Controls */}
+      {/* Top controls */}
       <div className="row mb-4 align-items-center">
-        {/* Upload notes */}
+        {/* Import button (purely visual right now) */}
+        {/*<div className="col-auto">
+          <button className="btn btn-primary" type="button">
+            Import .txt
+          </button>
+        </div>*/}
+
+        {/* File input */}
         <div className="col-auto">
-          <label className="form-label mb-0">
-            <strong>1. Upload your notes (.txt)</strong>
-          </label>
           <input
             type="file"
             accept=".txt"
@@ -128,18 +184,23 @@ export default function Revision() {
           />
         </div>
 
-        {/* Title input */}
+        {/* Notes dropdown */}
         <div className="col-auto">
           <label className="form-label mb-0">
             <strong>Notes title</strong>
           </label>
-          <input
-            type="text"
-            className="form-control"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Lady bugs"
-          />
+          <select
+            className="form-select"
+            value={selectedNoteId}
+            onChange={handleNoteChange}
+          >
+            <option value="">Select one of your notes…</option>
+            {notesList.map((note) => (
+              <option key={note._id} value={note._id}>
+                {note.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Action buttons */}
@@ -149,14 +210,14 @@ export default function Revision() {
             onClick={handleClassify}
             disabled={loading}
           >
-            {loading ? "Working..." : "Classify"}
+            {loading ? "Working…" : "Classify"}
           </button>
           <button
             className="btn btn-primary"
             onClick={handleAnalyze}
             disabled={loading}
           >
-            {loading ? "Working..." : "Analyze"}
+            {loading ? "Working…" : "Analyze"}
           </button>
         </div>
       </div>
@@ -169,99 +230,102 @@ export default function Revision() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main content */}
       <div className="row g-4">
-        {/* Notes Review Panel */}
-        <div className="col-6">
+        {/* Notes panel */}
+        <div className="col-12 col-lg-8">
           <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
-            <h5 className="mb-3">Notes (from uploaded file)</h5>
+            <h5 className="mb-3">Notes</h5>
             <div className="notes-review">
               {notesText ? (
                 <pre style={{ whiteSpace: "pre-wrap" }}>{notesText}</pre>
               ) : (
-                <p className="text-muted">Upload a .txt file to see your notes here.</p>
+                <p className="text-muted">
+                  Upload a .txt file or select one of your existing notes to see it here.
+                </p>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Student Response Panel */}
-        <div className="col-6">
-          <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
-            <h5 className="mb-3">2. Your Response</h5>
+            {/* Student answer box */}
+            <hr />
+            <h6>Your answer</h6>
             <textarea
               className="form-control"
-              rows={10}
-              placeholder="Write your answer here based on the notes..."
+              rows={5}
+              placeholder="Write your short answer here..."
               value={studentResponse}
               onChange={(e) => setStudentResponse(e.target.value)}
             />
           </div>
         </div>
-      </div>
 
-      {/* Feedback + Cheat Sheet */}
-      <div className="row mt-4 g-4">
-        {/* AI Feedback */}
-        <div className="col-6">
+        {/* AI Feedback panel */}
+        <div className="col-12 col-lg-4">
           <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
             <h5 className="mb-3">AI Feedback</h5>
+            <div className="feedback-panel">
+  {loading && <p>Working on your answer...</p>}
 
-            {classifyResult && (
-              <div className="mb-3">
-                <h6>Classification (/classify)</h6>
-                <p>
-                  <strong>{classifyResult.classification}</strong> (score{" "}
-                  {classifyResult.score})
-                </p>
-                <p>{classifyResult.feedback}</p>
-              </div>
-            )}
+  {!loading && !classifyResult && !analyzeResult && (
+    <p className="text-muted">
+      No AI feedback yet. Write a response and click <strong>Classify</strong> or <strong>Analyze</strong>.
+    </p>
+  )}
 
-            {analyzeResult && (
-              <div>
-                <h6>Analysis (/analyze)</h6>
-                <p>
-                  <strong>{analyzeResult.classification}</strong> (score{" "}
-                  {analyzeResult.score})
-                </p>
-                <p>{analyzeResult.feedback}</p>
+  {classifyResult && (
+    <div className="mb-3">
+      <h6>MiniLM Classification</h6>
+      <p>
+        <strong>Status:</strong> {classifyResult.classification}
+      </p>
+      <p>
+        <strong>Score:</strong> {classifyResult.score}
+      </p>
+      <p>{classifyResult.feedback}</p>
+    </div>
+  )}
 
-                {analyzeResult.keywords && analyzeResult.keywords.length > 0 && (
-                  <>
-                    <h6 className="mt-3 mb-1">Keywords</h6>
-                    <ul className="mb-0">
-                      {analyzeResult.keywords.map((kw, i) => (
-                        <li key={i}>{kw}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
+  {analyzeResult && (
+    <div>
+      <h6>Gemini Analysis</h6>
+      <p>
+        <strong>Status:</strong> {analyzeResult.classification}
+      </p>
+      <p>
+        <strong>Score:</strong> {analyzeResult.score}
+      </p>
+      {/* feedback from Gemini is multi-line, so keep line breaks */}
+      <p style={{ whiteSpace: "pre-line" }}>{analyzeResult.feedback}</p>
 
-            {!classifyResult && !analyzeResult && (
-              <p className="text-muted">
-                After you write your response, click <strong>Classify</strong> or{" "}
-                <strong>Analyze</strong> to see feedback here.
-              </p>
-            )}
+      {analyzeResult.keywords && analyzeResult.keywords.length > 0 && (
+        <>
+          <strong>Key ideas to remember:</strong>
+          <ul>
+            {analyzeResult.keywords.map((k) => (
+              <li key={k}>{k}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  )}
+</div>
+
           </div>
         </div>
 
         {/* Cheat Sheet */}
-        <div className="col-6">
+        <div className="col-12 col-lg-6">
           <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
             <h5 className="mb-3">Cheat Sheet</h5>
             <div className="cheatsheet-box">
-              {analyzeResult && analyzeResult.cheat_sheet ? (
+              {analyzeResult?.cheat_sheet ? (
                 <pre style={{ whiteSpace: "pre-wrap" }}>
                   {analyzeResult.cheat_sheet}
                 </pre>
               ) : (
                 <p className="text-muted">
-                  Once <strong>/analyze</strong> is implemented to return a cheat_sheet, it
-                  will show up here.
+                  Run <strong>Analyze</strong> to generate a mini cheat sheet from your notes.
                 </p>
               )}
             </div>

@@ -1,98 +1,151 @@
-/* Wrapper covering whole screen */
+/* --------------------------------------------------
+   LOGIN PAGE LAYOUT
+-------------------------------------------------- */
+
 .login-container {
   width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: var(--lg);
 }
 
-/* Main white card */
+/* Main card with glass + leather fusion */
 .login-card {
   width: 80%;
-  max-width: 1100px;
-  height: 70%;
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  border: 2px solid var(--border);
+  max-width: 1050px;
+  min-height: 70%;
+
+  background: rgba(28, 28, 28, 0.55);
+  backdrop-filter: blur(12px);
+  border-radius: var(--r-lg);
+
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55);
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+  padding: var(--xl);
+
+  transition: transform 0.2s ease;
 }
 
-/* Left side branding */
+.login-card:hover {
+  transform: scale(1.01);
+}
+
+/* --------------------------------------------------
+   LEFT SIDE BRANDING
+-------------------------------------------------- */
+
 .login-left {
   flex: 1;
-  padding-left: var(--spacing-lg);
+  padding-left: var(--lg);
+  color: var(--text);
 }
 
 .login-title {
-  font-size: 2.8rem;
-  font-weight: 700;
-  background: var(--gradient-accent);
-background: var(--gradient-accent);
--webkit-background-clip: text;  /* Chrome / Safari */
-background-clip: text;          /* Standard syntax for Firefox + others */
-color: transparent;
-
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: var(--md);
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
 }
 
 .login-subtitle {
-  font-size: 1.2rem;
-  margin-top: var(--spacing-md);
+  font-size: 1.15rem;
+  line-height: 1.5;
   color: var(--subtext);
 }
 
-/* Right side form */
+/* --------------------------------------------------
+   FORM PANEL
+-------------------------------------------------- */
+
 .login-form {
   flex: 0.8;
-  max-width: 320px;
-  background: var(--surface);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-md);
-  border: 2px solid var(--accent-primary);
+  max-width: 350px;
+
+  background: rgba(18,18,18,0.75);
+  padding: var(--lg);
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255,255,255,0.12);
+
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xs);
+}
+
+.form-label {
+  font-size: 0.9rem;
+  color: var(--subtext);
+  font-weight: 500;
 }
 
 /* Inputs */
 .login-input {
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: var(--sm);
   font-size: 1rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
 }
 
-/* Gradient login button */
+.login-input:focus {
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.1);
+  transition: 0.2s;
+}
+
+/* Button */
 .login-button {
-  padding: var(--spacing-sm);
+  padding: var(--sm);
   font-size: 1rem;
-  border-radius: var(--radius-sm);
-  border: none;
+  border-radius: var(--r-sm);
   cursor: pointer;
-  color: white;
-  background: var(--gradient-accent);
-  transition: opacity 0.2s ease-in-out;
+  border: none;
+  color: #000;
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+  font-weight: 600;
+  transition: transform 0.2s ease;
 }
 
 .login-button:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
 }
 
-/* ----------------------------------------------
-   Mobile layout adjustments (stack vertical)
----------------------------------------------- */
+/* Link Styling */
+.login-form a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.login-form a:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------
+   MOBILE LAYOUT
+-------------------------------------------------- */
+
 @media (max-width: 768px) {
   .login-card {
     flex-direction: column;
-    height: auto;
-    padding: var(--spacing-md);
     text-align: center;
-    gap: var(--spacing-lg);
+    padding: var(--lg);
+    gap: var(--lg);
+    min-height: auto;
   }
 
   .login-left {
@@ -100,29 +153,6 @@ color: transparent;
   }
 
   .login-title {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
-
-  .login-subtitle {
-    font-size: 1rem;
-    margin-top: var(--spacing-sm);
-  }
-
-  .login-form {
-    max-width: 100%;
-    width: 100%;
-    border-width: 1.5px;
-  }
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--subtext);
 }

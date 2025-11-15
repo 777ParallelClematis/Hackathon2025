@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/navbar.css";
 
 export default function Navbar() {
@@ -10,47 +10,39 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <nav className="nb-nav">
 
-      {/* Logo / Brand */}
-      <Link className="navbar-brand fw-bold" to="/notes">
-        NoteBuddy
-      </Link>
+      {/* LEFT — App Name */}
+      <div className="nb-brand">ManuMatic</div>
 
-      {/* Mobile toggle */}
-      <button
-        className="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarContent"
-      >
-        <span className="navbar-toggler-icon"></span>
-      </button>
+      {/* CENTER MENU */}
+      <div className="nb-center">
+        <NavLink 
+          to="/notes"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Notes
+        </NavLink>
 
-      {/* Collapsible area */}
-      <div className="collapse navbar-collapse" id="navbarContent">
+        <NavLink 
+          to="/learn"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Revision
+        </NavLink>
 
-        {/* Left Links */}
-        <ul className="navbar-nav me-auto">
-          <li className="nav-item">
-            <Link className="nav-link" to="/notes">Notes</Link>
-          </li>
-
-          <li className="nav-item">
-            <Link className="nav-link" to="/learn">Revision</Link>
-          </li>
-
-          <li className="nav-item">
-            <Link className="nav-link" to="/notebook">Notebook</Link>
-          </li>
-        </ul>
-
-        {/* Right - Logout */}
-        <button className="btn btn-outline-light" onClick={handleLogout}>
-          Logout
-        </button>
-
+        <NavLink 
+          to="/notebook"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Notebook
+        </NavLink>
       </div>
+
+      {/* RIGHT — Logout */}
+      <button className="nb-logout" onClick={handleLogout}>
+        Logout
+      </button>
 
     </nav>
   );

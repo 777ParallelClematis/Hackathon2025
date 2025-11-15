@@ -23,6 +23,7 @@ from config import (
 )
 
 from routes.user_routes import user_routes
+from routes.notes_routes import notes_routes
 from db import get_db
 
 load_dotenv()
@@ -34,6 +35,7 @@ CORS(app)
 # BLUEPRINTS
 # ----------------------------
 app.register_blueprint(user_routes, url_prefix="/api/users")
+app.register_blueprint(notes_routes, url_prefix="/api/notes")
 
 
 # ----------------------------
@@ -666,6 +668,31 @@ def test_db():
         print("TEST-DB ERROR:", e)
         return {"status": "error", "message": str(e)}, 500
 
+@app.route('/notes', methods=['GET'])
+def get_notes_for_student():
+    """
+    Return all notes for a given student, used to fill the dropdown
+    on the Revision page.
+
+    Query param:
+      ?student_id=<id from localStorage>
+    """
+    student_id = request.args.get('student_id')
+    if not student_id:
+        return jsonify({"status": "error", "message": "student_id is required"}), 400
+
+    # Match how you store created_by in Mongo
+    if ObjectId.is_valid(student_id):
+        query = {"created_by": ObjectId(student_id)}
+    else:
+        query = {"created_by": student_id}
+
+    docs = list(db_fetcher.ref_collection.find(query, {"title": 1, "note_text": 1}))
+    # Convert ObjectId -> string for JSON
+    for d in docs:
+        d["_id"] = str(d["_id"])
+
+    return jsonify({"status": "ok", "notes": docs})
 
 if __name__ == "__main__":
     # Optional: quick DB ping

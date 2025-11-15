@@ -143,3 +143,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+#python
+__pycache__/
+*.pyc
+Backend/**/__pycache__/
