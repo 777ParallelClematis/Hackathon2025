@@ -10,47 +10,19 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <nav className="nb-nav">
 
-      {/* Logo / Brand */}
-      <Link className="navbar-brand fw-bold" to="/notes">
-        NoteBuddy
-      </Link>
-
-      {/* Mobile toggle */}
-      <button
-        className="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarContent"
-      >
-        <span className="navbar-toggler-icon"></span>
-      </button>
-
-      {/* Collapsible area */}
-      <div className="collapse navbar-collapse" id="navbarContent">
-
-        {/* Left Links */}
-        <ul className="navbar-nav me-auto">
-          <li className="nav-item">
-            <Link className="nav-link" to="/notes">Notes</Link>
-          </li>
-
-          <li className="nav-item">
-            <Link className="nav-link" to="/learn">Revision</Link>
-          </li>
-
-          <li className="nav-item">
-            <Link className="nav-link" to="/notebook">Notebook</Link>
-          </li>
-        </ul>
-
-        {/* Right - Logout */}
-        <button className="btn btn-outline-light" onClick={handleLogout}>
-          Logout
-        </button>
-
+      {/* Center menu */}
+      <div className="nb-center">
+        <Link className="nb-item" to="/notes">Notes</Link>
+        <Link className="nb-item" to="/learn">Revision</Link>
+        <Link className="nb-item" to="/notebook">Notebook</Link>
       </div>
+
+      {/* Logout button */}
+      <button className="nb-logout" onClick={handleLogout}>
+        Logout
+      </button>
 
     </nav>
   );

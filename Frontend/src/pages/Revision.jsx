@@ -1,4 +1,4 @@
-import "../styles/revision.css"; // keep for overrides only
+import "../styles/revision.css"; // overrides only
 
 export default function Revision() {
   return (
@@ -13,8 +13,8 @@ export default function Revision() {
 
         <div className="col-auto">
           <input 
-            type="file" 
-            accept=".txt" 
+            type="file"
+            accept=".txt"
             className="form-control"
           />
         </div>
@@ -24,23 +24,19 @@ export default function Revision() {
       {/* Main Content */}
       <div className="row g-4">
 
-        {/* Notes Review Panel */}
-        <div className="col-8">
+        {/* Notes Review */}
+        <div className="col-12 col-lg-8">
           <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
             <h5 className="mb-3">Notes</h5>
-            <div className="notes-review">
-              {/* text showing uploaded notes */}
-            </div>
+            <div className="notes-review"></div>
           </div>
         </div>
 
-        {/* Feedback Panel */}
-        <div className="col-4">
+        {/* Feedback */}
+        <div className="col-12 col-lg-4">
           <div className="card p-4 h-100" style={{ overflowY: "auto" }}>
             <h5 className="mb-3">AI Feedback</h5>
-            <div className="feedback-panel">
-              {/* Gemini feedback + tips */}
-            </div>
+            <div className="feedback-panel"></div>
           </div>
         </div>
 
@@ -51,9 +47,7 @@ export default function Revision() {
         <div className="col-12">
           <div className="card p-4">
             <h5 className="mb-3">Cheat Sheet</h5>
-            <div className="cheatsheet-box">
-              {/* mini cheat sheet */}
-            </div>
+            <div className="cheatsheet-box"></div>
           </div>
         </div>
       </div>
