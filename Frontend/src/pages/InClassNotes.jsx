@@ -1,43 +1,40 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import "../styles/notes.css";
 
 export default function InClassNotes() {
   const [text, setText] = useState("");
-  const [saving, setSaving] = useState(false);
 
+  // ----- LIVE STATS -----
+  const stats = useMemo(() => {
+    const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+    const chars = text.length;
+    const readingMin = Math.max(1, Math.ceil(words / 200));   // avg reading speed
+    const speakingSec = Math.ceil(words / 2.5);                // avg speaking speed
+
+    return { words, chars, readingMin, speakingSec };
+  }, [text]);
+
+  // ----- SAVE ACTION -----
   async function handleSave() {
     if (!text.trim()) return;
 
-    setSaving(true);
-
     try {
-      // TODO: replace with your actual backend route
-      const response = await fetch("http://localhost:5000/api/notes/save", {
+      await fetch("http://localhost:5000/api/notes/save", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text })
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save note");
-      }
-
-      console.log("Note saved successfully");
+      console.log("Saved to notebook");
     } catch (err) {
       console.error(err);
-    } finally {
-      setSaving(false);
     }
   }
 
   return (
     <div className="ic-page container-fluid">
-
       <div className="row h-100">
 
-        {/* FULL WIDTH — NOTES + OVERLAY */}
         <div className="col-12 d-flex flex-column position-relative">
 
           {/* HEADER BAR */}
@@ -45,15 +42,14 @@ export default function InClassNotes() {
             <h2 className="mb-0">In-Class Notes</h2>
 
             <button
-              className="btn btn-primary ic-save-btn"
+              className="btn ic-save-btn"
               onClick={handleSave}
-              disabled={saving}
             >
-              {saving ? "Saving..." : "Save"}
+              Save to Notebook
             </button>
           </div>
 
-          {/* TEXT INPUT */}
+          {/* MAIN TEXTAREA */}
           <textarea
             className="form-control flex-grow-1 ic-textarea"
             value={text}
@@ -61,12 +57,20 @@ export default function InClassNotes() {
             placeholder="Start typing..."
           />
 
-          {/* QUESTIONS OVERLAY */}
+          {/* QUESTIONS OVERLAY (existing) */}
           <div className="ic-questions-overlay">
             <h5 className="ic-q-title">Questions</h5>
-            <div className="ic-q-scroll">
-              {/* questions go here */}
-            </div>
+            <div className="ic-q-scroll"></div>
+          </div>
+
+          {/* NEW STATS OVERLAY — bottom-left */}
+          <div className="ic-stats-overlay">
+            <h5 className="ic-stats-title">Stats</h5>
+
+            <div className="ic-stats-item">Words: {stats.words}</div>
+            <div className="ic-stats-item">Characters: {stats.chars}</div>
+            <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
+            <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
           </div>
 
         </div>
