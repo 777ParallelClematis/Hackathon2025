@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import "../styles/navbar.css";
+
 
 export default function Navbar() {
   const { logout } = useAuth();
@@ -19,10 +20,11 @@ export default function Navbar() {
 
   {/* CENTER NAV ITEMS */}
 <div className="nb-center">
-  <Link to="/notes" className="nb-item">In Class</Link>
-  <Link to="/learn" className="nb-item">Revision</Link>
-  <Link to="/notebook" className="nb-item">Notebook</Link>
+  <NavLink to="/notes" className="nb-item">In Class</NavLink>
+  <NavLink to="/learn" className="nb-item">Revision</NavLink>
+  <NavLink to="/notebook" className="nb-item">Notes</NavLink>
 </div>
+
 
 
   {/* RIGHT SIDE (toggle + logout) */}

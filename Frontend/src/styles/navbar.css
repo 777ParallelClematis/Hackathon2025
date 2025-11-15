@@ -71,14 +71,38 @@
   text-shadow: 0 0 6px rgba(255,255,255,0.25);
 }
 
-.nb-item.active {
-  color: var(--bg-charcoal);
-  background: var(--text-ivory);
-  padding: 6px 12px;
+.nb-item {
+  color: var(--text-ivory-dim);
+  text-decoration: none;
+  transition: 0.25s ease;
+  font-weight: 500;
+
+  padding: 6px 12px;          /* ← added to base state */
   border-radius: 6px;
-  font-weight: 600;
-  text-shadow: none;
 }
+
+.nb-item:hover {
+  color: var(--hover-ivory);
+  text-shadow: 0 0 6px rgba(255,255,255,0.25);
+}
+
+/* ACTIVE NAV ITEM */
+/* ACTIVE NAV ITEM — with pink accent border */
+.nb-item.active {
+  background: var(--text-ivory);
+  color: var(--bg-charcoal);
+
+  border: 2px solid var(--accent);   /* pink accent border */
+  border-radius: 8px;
+
+  padding: 6px 14px;                 /* extra room for border */
+  font-weight: 600;
+
+  text-shadow: none;
+  transition: 0.25s ease;
+}
+
+
 
 /* --------------------------------------------------
    THEME TOGGLE BUTTON
