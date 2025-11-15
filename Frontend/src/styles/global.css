@@ -30,6 +30,10 @@
   /* Accents */
 --accent: #ff6495;       /* modern muted pink */
 --accent-soft: #ff8fb0;  /* softer variant */
+/* Secondary accent */
+--accent2: #5ccfe6;       /* turquoise */
+--accent2-soft: #8eddea;  /* softer */
+
 
 }
 
