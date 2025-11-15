@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/navbar.css";
 
 export default function Navbar() {
@@ -12,14 +12,34 @@ export default function Navbar() {
   return (
     <nav className="nb-nav">
 
-      {/* Center menu */}
+      {/* LEFT — App Name */}
+      <div className="nb-brand">ManuMatic</div>
+
+      {/* CENTER MENU */}
       <div className="nb-center">
-        <Link className="nb-item" to="/notes">Notes</Link>
-        <Link className="nb-item" to="/learn">Revision</Link>
-        <Link className="nb-item" to="/notebook">Notebook</Link>
+        <NavLink 
+          to="/notes"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Notes
+        </NavLink>
+
+        <NavLink 
+          to="/learn"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Revision
+        </NavLink>
+
+        <NavLink 
+          to="/notebook"
+          className={({ isActive }) => isActive ? "nb-item active" : "nb-item"}
+        >
+          Notebook
+        </NavLink>
       </div>
 
-      {/* Logout button */}
+      {/* RIGHT — Logout */}
       <button className="nb-logout" onClick={handleLogout}>
         Logout
       </button>
