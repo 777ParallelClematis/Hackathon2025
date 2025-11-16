@@ -26,20 +26,9 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-<<<<<<< HEAD
-  function login(jwtToken, userId) {
-    localStorage.setItem("token", jwtToken);
-    localStorage.setItem("_id", userId);   
-    setToken(jwtToken);
-    setIsAuthenticated(true);
-  }
-  
-
-=======
   // --------------------------------------------------
   // Logout
   // --------------------------------------------------
->>>>>>> origin/frontend
   function logout() {
     localStorage.removeItem("token");
     setToken(null);
@@ -50,13 +39,15 @@ export function AuthProvider({ children }) {
   // --------------------------------------------------
   // Login
   // --------------------------------------------------
-  function login(jwtToken) {
+  function login(jwtToken, userId) {
     localStorage.setItem("token", jwtToken);
+    localStorage.setItem("student_id", userId);  // <-- ADD THIS
     setToken(jwtToken);
     setIsAuthenticated(true);
     lastActivity.current = Date.now();
     startInactivityWatcher();
   }
+  
 
   // --------------------------------------------------
   // Inactivity watcher

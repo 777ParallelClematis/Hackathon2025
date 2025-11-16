@@ -1,12 +1,26 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "../styles/notes.css";
 
 export default function InClassNotes() {
+  const location = useLocation();
+  const editingNote = location.state || null; // <-- if present, edit mode
+
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [questions, setQuestions] = useState([]);
   const [loadingQ, setLoadingQ] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+
+  // ---------------------------
+  // Pre-fill fields if editing
+  // ---------------------------
+  useEffect(() => {
+    if (editingNote) {
+      setTitle(editingNote.title || "");
+      setText(editingNote.note_text || "");
+    }
+  }, [editingNote]);
 
   // ---------------------------
   // Live Stats
@@ -21,13 +35,12 @@ export default function InClassNotes() {
     return { words, chars, readingMin, speakingSec };
   }, [text]);
 
-  // Retrieve stored access token
   function getToken() {
     return localStorage.getItem("token");
   }
 
   // ---------------------------
-  // Save Notes to DB
+  // SAVE — New Note
   // ---------------------------
   async function handleSave() {
     const trimmedText = text.trim();
@@ -41,7 +54,7 @@ export default function InClassNotes() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/notes/save", {
+      const res = await fetch("http://127.0.0.1:8080/api/notes/save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,42 +72,75 @@ export default function InClassNotes() {
         return;
       }
 
-      // SUCCESS → Clear fields + show message
-      setText("");
-      setTitle("");
       setSavedMsg("Note saved!");
-
       setTimeout(() => setSavedMsg(""), 2500);
+
+      setTitle("");
+      setText("");
     } catch (err) {
       console.error("Save error:", err);
     }
   }
 
   // ---------------------------
-  // Delete a single question
+  // UPDATE — Existing Note
+  // ---------------------------
+  async function handleUpdate() {
+    if (!editingNote) return;
+
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8080/api/notes/update/${editingNote._id || editingNote.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: title.trim() || "Untitled Note",
+            note_text: text.trim(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error("Update failed", await res.text());
+        return;
+      }
+
+      setSavedMsg("Note updated!");
+      setTimeout(() => setSavedMsg(""), 2500);
+    } catch (err) {
+      console.error("Update error:", err);
+    }
+  }
+
+  // ---------------------------
+  // Delete a question
   // ---------------------------
   function removeQuestion(index) {
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   }
 
   // ---------------------------
-  // Generate Questions (via backend)
+  // AI Question Generation
   // ---------------------------
   async function generateQuestions() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
     const token = getToken();
-    if (!token) {
-      console.error("No auth token found; cannot call AI");
-      return;
-    }
+    if (!token) return;
 
     setLoadingQ(true);
     setQuestions([]);
 
     try {
-      const res = await fetch("http://localhost:5000/api/ai/generate-questions", {
+      const res = await fetch("http://localhost:8080/api/ai/generate-questions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,13 +150,7 @@ export default function InClassNotes() {
       });
 
       if (!res.ok) {
-        const errBody = await res.text();
-        console.error(
-          "AI endpoint failed:",
-          res.status,
-          res.statusText,
-          errBody
-        );
+        console.error("AI FAILED", res.status, await res.text());
         setLoadingQ(false);
         return;
       }
@@ -119,11 +159,9 @@ export default function InClassNotes() {
 
       if (Array.isArray(data.questions)) {
         setQuestions(data.questions);
-      } else {
-        console.error("Unexpected AI response format:", data);
       }
     } catch (err) {
-      console.error("AI Request Failed:", err);
+      console.error("AI error:", err);
     } finally {
       setLoadingQ(false);
     }
@@ -135,15 +173,20 @@ export default function InClassNotes() {
   return (
     <div className="ic-page">
       <div className="ic-wrapper position-relative">
-        
         {/* Header Bar */}
         <div className="ic-header">
-          <h2>In-Class Notes</h2>
+          <h2>{editingNote ? "Update Note" : "In-Class Notes"}</h2>
 
           <div className="ic-header-buttons">
-            <button className="btn ic-save-btn" onClick={handleSave}>
-              Save to Notebook
-            </button>
+            {!editingNote ? (
+              <button className="btn ic-save-btn" onClick={handleSave}>
+                Save to Notebook
+              </button>
+            ) : (
+              <button className="btn ic-save-btn" onClick={handleUpdate}>
+                Update Note
+              </button>
+            )}
 
             <button
               className="btn ic-generate-btn"
@@ -172,7 +215,6 @@ export default function InClassNotes() {
           placeholder="Start typing..."
         />
 
-        {/* Save Notification */}
         {savedMsg && <div className="ic-save-notification">{savedMsg}</div>}
 
         {/* Questions Overlay */}
@@ -189,10 +231,7 @@ export default function InClassNotes() {
             {questions.map((q, i) => (
               <div key={i} className="ic-q-bubble">
                 <span className="ic-q-text">{q}</span>
-                <button
-                  className="ic-q-close"
-                  onClick={() => removeQuestion(i)}
-                >
+                <button className="ic-q-close" onClick={() => removeQuestion(i)}>
                   ×
                 </button>
               </div>
@@ -205,9 +244,7 @@ export default function InClassNotes() {
           <h5 className="ic-stats-title">Stats</h5>
           <div className="ic-stats-item">Words: {stats.words}</div>
           <div className="ic-stats-item">Characters: {stats.chars}</div>
-          <div className="ic-stats-item">
-            Reading time: {stats.readingMin} min
-          </div>
+          <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
           <div className="ic-stats-item">
             Speaking time: {stats.speakingSec}s
           </div>

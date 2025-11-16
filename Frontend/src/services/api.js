@@ -105,27 +105,28 @@ export function classifyAnswer({ title, student_id, student_response }) {
  *  - decodes token to extract user id and saves it as "student_id"
  *  - returns the response data so Login.jsx can still call useAuth.login(data.token)
  */
-export async function login({ email, password }) {
-  const data = await postJSON("/api/users/login", { email, password });
-
-  if (data.token) {
-    // store token
-    localStorage.setItem("token", data.token);
-
-    // decode and store student_id
-    const payload = decodeJwtPayload(data.token);
-    const userId = extractUserIdFromPayload(payload);
-
-    if (userId) {
-      localStorage.setItem("student_id", userId);
-      console.log("Saved student_id:", userId);
-    } else {
-      console.warn("Could not extract user id from JWT payload.");
+export async function login(email, password) {
+    // Corrected: Pass email and password as an object to postJSON
+    const data = await postJSON("/api/users/login", { email, password });
+  
+    if (data.token) {
+      // store token
+      localStorage.setItem("token", data.token);
+  
+      // decode and store student_id
+      const payload = decodeJwtPayload(data.token);
+      const userId = extractUserIdFromPayload(payload);
+  
+      if (userId) {
+        localStorage.setItem("student_id", userId);
+        console.log("Saved student_id:", userId);
+      } else {
+        console.warn("Could not extract user id from JWT payload.");
+      }
     }
+  
+    return data;
   }
-
-  return data;
-}
 
 // If your register endpoint also returns a token, this will behave like login
 export async function registerUser({ name, email, password }) {

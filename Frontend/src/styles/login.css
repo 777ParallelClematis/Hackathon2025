@@ -145,3 +145,44 @@ body.light .login-button {
   background: linear-gradient(135deg, var(--accent), var(--accent-soft));
   color: #3a1e25; /* dark warm brown for contrast */
 }
+
+/*AI INFO*/
+.info-tooltip-container {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.info-icon {
+  font-size: 1.25rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.info-tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 0.4rem 0.6rem;
+  position: absolute;
+  bottom: 150%;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.info-tooltip-container:hover .info-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
