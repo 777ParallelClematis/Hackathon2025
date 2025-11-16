@@ -558,13 +558,20 @@ def classify():
     """
     Runs the MiniLM classification and saves the result.
 
-    API body (new, more flexible):
+    API body (flexible):
+
       {
-        "note_id": "<Mongo _id as string>",   # preferred
-        "title": "Some note title",           # optional, fallback
+        "note_id": "<Mongo _id as string>",   # preferred when using saved notes
+        "title": "Some note title",           # optional, used if note_id missing
+        "reference_text": "raw notes text",   # optional, e.g. from uploaded .txt
         "student_id": "some_student_id",
         "student_response": "Their answer..."
       }
+
+    Priority for reference text:
+      1) reference_text (explicit text from frontend)
+      2) note_id (lookup in Mongo)
+      3) title (lookup in Mongo, with fuzzy matching)
     """
     try:
         data = request.get_json(force=True) or {}
@@ -576,24 +583,41 @@ def classify():
 
     note_id = data.get("note_id")
     note_title = data.get("title")
+    reference_text = (data.get("reference_text") or "").strip()
     student_id = data.get("student_id")
     student_response = data.get("student_response")
 
-    # ✅ validation: we now require (note_id OR title)
-    if (not note_id and not note_title) or not student_id or not student_response:
+    # At minimum, we need:
+    # - a student_id
+    # - a student_response
+    # - and SOME kind of reference (note_id OR title OR explicit reference_text)
+    has_any_reference = bool(note_id or note_title or reference_text)
+
+    if not has_any_reference or not student_id or not student_response:
         return jsonify({
             "status": "error",
-            "message": "Missing note_id/title, student_id, or student_response"
+            "message": "Missing reference (note_id/title/reference_text), student_id, or student_response"
         }), 400
 
-    # 1️⃣ Fetch reference, preferring note_id
+    # 1️⃣ Decide which reference to use
     try:
-        if note_id:
+        if reference_text:
+            # Highest priority: explicit reference text from frontend (.txt upload)
+            reference_standard = reference_text
+            effective_title = note_title or "Uploaded reference"
+            print("[INFO] Using explicit reference_text from request for classification.")
+
+        elif note_id:
+            # Second priority: stored note by id
             reference_standard, canonical_title = db_fetcher.get_reference_by_id(note_id)
             effective_title = canonical_title or note_title or "Untitled note"
+            print(f"[INFO] Using DB reference for note_id={note_id} with title='{effective_title}'.")
+
         else:
+            # Fallback: look up by title
             reference_standard = db_fetcher.get_reference_standard(note_title)
             effective_title = note_title or "Untitled note"
+            print(f"[INFO] Using DB reference for title='{effective_title}'.")
     except Exception as e:
         print(f"[ERROR] Failed to fetch reference: {e}")
         return jsonify({
@@ -622,7 +646,7 @@ def classify():
         "feedback": f"MiniLM classified with similarity score: {score:.4f}",
     }
 
-    # 3️⃣ Save to DB (using canonical title)
+    # 3️⃣ Save to DB (using effective_title)
     try:
         grade_data = prepare_grade_data(
             student_id=student_id,
@@ -646,11 +670,17 @@ def analyze():
 
     Body:
       {
-        "note_id": "<Mongo _id as string>",   # preferred
+        "note_id": "<Mongo _id as string>",   # preferred when using saved notes
         "title": "Some note title",           # optional
+        "reference_text": "raw notes text",   # optional (.txt upload)
         "student_id": "some_student_id",
         "student_response": "Their answer..."
       }
+
+    Priority for reference standard:
+      1) reference_text
+      2) note_id
+      3) title
     """
     try:
         data = request.get_json(force=True) or {}
@@ -662,23 +692,33 @@ def analyze():
 
     note_id = data.get("note_id")
     note_title = data.get("title")
+    reference_text = (data.get("reference_text") or "").strip()
     student_id = data.get("student_id")
     student_response = data.get("student_response")
+
     print("[DEBUG] Backend received note_id:", note_id)
 
-    if (not note_id and not note_title) or not student_id or not student_response:
+    has_any_reference = bool(note_id or note_title or reference_text)
+
+    if not has_any_reference or not student_id or not student_response:
         return jsonify({
             "status": "error",
-            "message": "Missing note_id/title, student_id, or student_response"
+            "message": "Missing reference (note_id/title/reference_text), student_id, or student_response"
         }), 400
 
-    # 1️⃣ Fetch reference (prefer id)
-    if note_id:
+    # 1️⃣ Choose reference text (priority order)
+    if reference_text:
+        reference_standard = reference_text
+        effective_title = note_title or "Uploaded reference"
+        print("[INFO] Using explicit reference_text from request for analysis.")
+    elif note_id:
         reference_standard, canonical_title = db_fetcher.get_reference_by_id(note_id)
         effective_title = canonical_title or note_title or "Untitled note"
+        print(f"[INFO] Using DB reference for note_id={note_id} with title='{effective_title}'.")
     else:
         reference_standard = db_fetcher.get_reference_standard(note_title)
         effective_title = note_title or "Untitled note"
+        print(f"[INFO] Using DB reference for title='{effective_title}'.")
 
     # 2️⃣ MiniLM score (used as a rough guide for Gemini)
     is_correct, score = classifier.classify_response_on_demand(
@@ -719,7 +759,6 @@ def analyze():
     db_fetcher.save_grade_result(grade_data)
 
     return jsonify(final_result), 200
-
 
 
 @app.route("/")
