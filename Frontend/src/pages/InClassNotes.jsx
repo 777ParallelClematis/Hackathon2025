@@ -11,14 +11,61 @@ export default function InClassNotes() {
   // ---------------------------
   // Live Stats
   // ---------------------------
+  // ---------------------------
+  // Live Stats (Enhanced)
+  // ---------------------------
+  // ---------------------------
+  // Live Stats (Minimal Version)
+  // ---------------------------
   const stats = useMemo(() => {
     const trimmed = text.trim();
-    const words = trimmed ? trimmed.split(/\s+/).length : 0;
-    const chars = text.length;
-    const readingMin = Math.max(1, Math.ceil(words / 200));
-    const speakingSec = Math.ceil(words / 2.5);
 
-    return { words, chars, readingMin, speakingSec };
+    // Words
+    const words = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+
+    // Characters
+    const chars = text.length;
+
+    // Sentences
+    const sentencesArr = trimmed ? trimmed.split(/[.!?]+/).filter(Boolean) : [];
+    const sentences = sentencesArr.length;
+
+    // Average words per sentence
+    const avgWordsPerSentence =
+      sentences > 0 ? Math.round(words / sentences) : 0;
+
+    // Unique words
+    const cleanedWords = trimmed
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const uniqueWords = new Set(cleanedWords).size;
+
+    // Top 5 letters
+    const letters = text
+      .toLowerCase()
+      .replace(/[^a-z]/g, "")
+      .split("");
+
+    const freq = {};
+    letters.forEach((l) => {
+      freq[l] = (freq[l] || 0) + 1;
+    });
+
+    const topLetters = Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([char, count]) => `${char}: ${count}`);
+
+    return {
+      words,
+      chars,
+      uniqueWords,
+      topLetters,
+      avgWordsPerSentence,
+    };
   }, [text]);
 
   // Retrieve stored access token
@@ -94,14 +141,17 @@ export default function InClassNotes() {
     setQuestions([]);
 
     try {
-      const res = await fetch("http://localhost:5000/api/ai/generate-questions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text: trimmed }),
-      });
+      const res = await fetch(
+        "http://localhost:5000/api/ai/generate-questions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: trimmed }),
+        }
+      );
 
       if (!res.ok) {
         const errBody = await res.text();
@@ -135,7 +185,6 @@ export default function InClassNotes() {
   return (
     <div className="ic-page">
       <div className="ic-wrapper position-relative">
-        
         {/* Header Bar */}
         <div className="ic-header">
           <h2>In-Class Notes</h2>
@@ -200,18 +249,25 @@ export default function InClassNotes() {
           </div>
         </div>
 
-        {/* Stats Overlay */}
-        <div className="ic-stats-overlay">
+                <div className="ic-stats-overlay">
           <h5 className="ic-stats-title">Stats</h5>
+
           <div className="ic-stats-item">Words: {stats.words}</div>
           <div className="ic-stats-item">Characters: {stats.chars}</div>
+          <div className="ic-stats-item">Unique words: {stats.uniqueWords}</div>
+
           <div className="ic-stats-item">
-            Reading time: {stats.readingMin} min
+            Top letters:{" "}
+            {stats.topLetters.length > 0
+              ? stats.topLetters.join(", ")
+              : "—"}
           </div>
+
           <div className="ic-stats-item">
-            Speaking time: {stats.speakingSec}s
+            Avg words/sentence: {stats.avgWordsPerSentence}
           </div>
         </div>
+
       </div>
     </div>
   );
