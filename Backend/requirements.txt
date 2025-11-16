@@ -16,3 +16,4 @@ sentence-transformers==5.1.2
 numpy==2.3.4
 regex==2025.11.3
 tqdm==4.67.1
+marshmallow
