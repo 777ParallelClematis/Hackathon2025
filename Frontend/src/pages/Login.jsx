@@ -46,11 +46,13 @@ export default function Login() {
       <div className="login-card">
 
         <div className="login-left">
-          <h1 className="login-title">NoteBuddy</h1>
+          <h1 className="login-title">Manumatic</h1>
           <p className="login-subtitle">
-            Learn better on campus
+            Learning better on campus
             <br />
-            and off campus
+            and
+            <br/>
+            Learning better off campus
           </p>
         </div>
 
@@ -105,7 +107,7 @@ export default function Login() {
             cursor: "pointer",
           }}
         >
-          Toggle Theme
+          Dark/Light 🌓
         </button>
       </div>
     </div>
