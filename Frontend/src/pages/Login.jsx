@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { login as apiLogin } from "../services/api.js"; // adjust path if needed
 import "../styles/global.css";
-import "../styles/backgrounds.css";   // ← add this
+import "../styles/backgrounds.css";
 import "../styles/login.css";
 
 export default function Login() {
@@ -17,13 +17,16 @@ export default function Login() {
     e.preventDefault();
   
     try {
-      const data = await apiLogin({ email, password });
-  
       if (data.token) {
         // this still updates the React auth context
         login(data.token);
       }
-  
+
+      const data = await res.json();
+
+      // *** FIXED LINE ***
+      login(data.accessToken);
+
       navigate("/notes");
     } catch (err) {
       console.error("Login error:", err);
@@ -37,11 +40,13 @@ export default function Login() {
       <div className="login-card">
 
         <div className="login-left">
-          <h1 className="login-title">NoteBuddy</h1>
+          <h1 className="login-title">Manumatic</h1>
           <p className="login-subtitle">
-            Learn better on campus
+            Learning better on campus
             <br />
-            and off campus
+            and
+            <br/>
+            Learning better off campus
           </p>
         </div>
 
@@ -83,23 +88,21 @@ export default function Login() {
         </form>
 
         <button
-  type="button"
-  onClick={() => document.body.classList.toggle("light")}
-  style={{
-    position: "fixed",
-    top: "20px",
-    right: "20px",
-    padding: "6px 12px",
-    background: "var(--accent)",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer"
-  }}
->
-  Toggle Theme
-</button>
-
-
+          type="button"
+          onClick={() => document.body.classList.toggle("light")}
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            padding: "6px 12px",
+            background: "var(--accent)",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Dark/Light 🌓
+        </button>
       </div>
     </div>
   );
