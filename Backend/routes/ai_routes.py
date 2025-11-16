@@ -1,134 +1,176 @@
 from flask import Blueprint, request, jsonify
 import os
 import requests
+import json # Import json for cleaner logging of dicts/JSON
+import traceback # Import traceback for better error logging
+
+from middleware.auth import require_auth
+from middleware.rate_limit import limiter
+
+# Validation
+from validation.ai_schemas import AIQuestionSchema
+from validation import validate_json
 
 ai_routes = Blueprint("ai_routes", __name__)
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-
-print("\n=== HF TOKEN LOADED ===")
-print("HF_API_KEY:", repr(HF_API_KEY))
-print("=======================\n")
-
-# HF Router (OpenAI-style)
 HF_MODEL_URL = "https://router.huggingface.co/v1/chat/completions"
-
-# Working router-compatible model
-MODEL_NAME = "moonshotai/Kimi-K2-Thinking:novita"
-
-print("=== HF ROUTER CONFIG ===")
-print("Endpoint:", HF_MODEL_URL)
-print("Model:", MODEL_NAME)
-print("========================\n")
+MODEL_NAME = os.getenv("MODEL_NAME")
 
 
-@ai_routes.route("/generate-questions", methods=["POST"])
+@ai_routes.route("/api/ai/generate-questions", methods=["POST", "OPTIONS"])
+@limiter.limit("10 per minute") 	 # <--- Rate limiting added
+@require_auth 	                     # <--- Must remain AFTER limiter
 def generate_questions():
-    print("\n========== /generate-questions CALLED ==========")
-
     try:
-        # STEP 1 — Read body
-        print("--- STEP 1: Read request body ---")
-        data = request.get_json()
-        print("Incoming JSON:", data)
+        data = request.get_json() or {}
 
-        text = (data or {}).get("text", "").strip()
-        print("Extracted text length:", len(text))
+        # -------------------------
+        # DEBUG STEP 1: Log incoming request data
+        # -------------------------
+        print("\n--- INCOMING REQUEST DATA ---")
+        # Use json.dumps for clean printing of Python dictionary
+        print(json.dumps(data, indent=2))
+        print("---------------------------\n")
+
+        # -------------------------
+        # Server-side validation
+        # -------------------------
+        schema = AIQuestionSchema()
+        error = validate_json(schema, data)
+        if error:
+            print(f"VALIDATION ERROR: {error.json}")
+            return error
+
+        text = data["text"].strip()
 
         if not text:
-            return jsonify({"error": "No text provided"}), 400
+            return jsonify({"error": "Text must not be empty"}), 400
 
-        # STEP 2 — Headers
-        print("\n--- STEP 2: Build headers ---")
+        # -------------------------
+        # DEBUG STEP 2: Log received notes
+        # -------------------------
+        print("\n=== NOTES RECEIVED ===")
+        print(text[:400]) # Print first 400 characters for brevity
+        print(f"Text length: {len(text)}")
+        print("======================\n")
+
         headers = {
             "Authorization": f"Bearer {HF_API_KEY}",
             "Content-Type": "application/json",
         }
 
-        # STEP 3 — Payload
-        print("\n--- STEP 3: Build payload ---")
+        # -------------------------
+        # Construct safe prompt
+        # -------------------------
         prompt = (
-    "Read the following notes and generate two sets of questions:\n"
-    "1. **Questions for the lecturer** – clarifications the student should ask in class.\n"
-    "2. **Questions for future learning** – deeper follow-up questions for revision.\n\n"
-    "Requirements:\n"
-    "- Base the questions ONLY on the provided notes.\n"
-    "- Provide EXACTLY 3 questions in each category.\n"
-    "- Do NOT explain your reasoning.\n"
-    "- Do NOT include chain-of-thought.\n"
-    "- Output ONLY the final questions in the correct format.\n"
-    "- Format EXACTLY as written below:\n"
-    "Questions for the lecturer:\n"
-    "- Q1\n- Q2\n- Q3\n\n"
-    "Questions for future learning:\n"
-    "- Q1\n- Q2\n- Q3\n\n"
-    f"NOTES:\n{text}"
-)
-
+            "Read the following notes and immediately produce three specific learning questions.\n"
+            "DO NOT think step by step. DO NOT analyze the notes. DO NOT explain your reasoning.\n"
+            "Begin your reply with the first question. Each question must end with a question mark.\n"
+            "Write only the three questions, each on its own line.\n\n"
+            f"NOTES:\n{text}\n\n"
+            "First question:"
+        )
 
         payload = {
             "model": MODEL_NAME,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 350,
-            "temperature": 0.3
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 150,
+            "temperature": 0.7,
         }
 
-        print("Payload OK:", str(payload)[:200], "...")
+        # -------------------------
+        # DEBUG STEP 3: Log the full request payload sent to HuggingFace
+        # -------------------------
+        print("\n--- HUGGINGFACE REQUEST PAYLOAD ---")
+        print(json.dumps(payload, indent=2))
+        print("-----------------------------------\n")
 
-        # STEP 4 — Send request
-        print("\n--- STEP 4: Send request ---")
-        print("POST", HF_MODEL_URL)
-
-        hf_res = requests.post(HF_MODEL_URL, headers=headers, json=payload)
-
-        # STEP 5 — Log response
-        print("\n--- HF RESPONSE ---")
-        print("Status:", hf_res.status_code)
-        print("Body:", hf_res.text[:400])
-        print("----------------------------")
+        print("--- Sending request to HuggingFace Router ---")
+        hf_res = requests.post(HF_MODEL_URL, headers=headers, json=payload, timeout=30)
+        print("HF status:", hf_res.status_code)
 
         if hf_res.status_code != 200:
+            try:
+                err = hf_res.json()
+            except Exception:
+                err = hf_res.text
+
+            print("HF ERROR:", str(err)[:500])
             return jsonify({
                 "error": "HF request failed",
                 "status_code": hf_res.status_code,
-                "details": hf_res.text
+                "details": err,
             }), 500
 
-        # STEP 6 — Parse JSON
-        print("\n--- STEP 6: Parse JSON ---")
         out = hf_res.json()
+        
+        # -------------------------
+        # DEBUG STEP 4: Log the full raw response JSON
+        # -------------------------
+        print("\n--- RAW HUGGINGFACE RESPONSE (JSON) ---")
+        print(json.dumps(out, indent=2))
+        print("---------------------------------------\n")
+        
+        msg = out.get("choices", [{}])[0].get("message", {})
+        reply = msg.get("content") or msg.get("reasoning_content") or ""
 
-        msg = out["choices"][0]["message"]
+        # -------------------------
+        # DEBUG STEP 5: Log the extracted text (the AI's reply)
+        # -------------------------
+        print("\n--- RAW MODEL OUTPUT (Content) ---")
+        print(reply)
+        print(f"Reply length: {len(reply)}")
+        print("---------------------------------\n")
 
-        # Use content OR reasoning_content (Kimi outputs reasoning_content)
-        reply = (
-            msg.get("content")
-            or msg.get("reasoning_content")
-            or ""
-        )
+        questions = []
+        
+        # -------------------------
+        # DEBUG STEP 6: Log question parsing details
+        # -------------------------
+        print("--- STARTING QUESTION PARSING ---")
+        for i, line in enumerate(reply.split("\n")):
+            clean = line.strip()
+            print(f"Line {i+1}: Raw: '{line}' -> Stripped: '{clean}'")
+            if clean.endswith("?"):
+                # Clean prefix numbers/bullets and whitespace
+                # This ensures we get the question text without leading bullets/numbers
+                clean = clean.lstrip("-•–1234567890. ").strip()
+                print(f"  -> VALIDATED & CLEANED: '{clean}'")
+                questions.append(clean)
+            else:
+                print("  -> SKIPPED (Line does not end with '?')")
 
-        print("Extracted reply:", reply[:200], "...")
+        questions = questions[:3]
 
-        # STEP 7 — Extract questions (line by line)
-        print("\n--- STEP 7: Split questions ---")
-        questions = [
-            q.strip().lstrip("-•0123456789. ").strip()
-            for q in reply.split("\n")
-            if q.strip()
-        ]
+        if len(questions) < 3:
+            # -------------------------
+            # DEBUG STEP 7: Log fallback usage
+            # -------------------------
+            print(f"!!! FALLBACK USED !!! Only {len(questions)} questions extracted. Defaulting to safe questions.")
+            questions = [
+                "What deeper relationships exist between supply, demand, and price changes?",
+                "How do market shifts influence the stability of equilibrium?",
+                "What factors determine how consumers and producers respond to price changes?"
+            ]
+        
+        # -------------------------
+        # DEBUG STEP 8: Log final output
+        # -------------------------
+        print("\n--- FINAL QUESTIONS SENT TO CLIENT ---")
+        print(questions)
+        print("--------------------------------------\n")
 
-        print("Parsed questions:", questions)
-
-        print("\n========== COMPLETE ==========\n")
         return jsonify({"questions": questions}), 200
 
+    except requests.exceptions.Timeout:
+        # Log Timeout error
+        print("\n!!! ERROR: AI Request Timed Out !!!\n")
+        return jsonify({"error": "AI request timed out"}), 504
+
     except Exception as e:
-        print("\n!!! FATAL ERROR IN AI ROUTE !!!")
-        print("Exception:", e)
-        print("=================================\n")
-        return jsonify({"error": str(e)}), 500
+        # Log comprehensive internal server error trace
+        print("\n!!! INTERNAL SERVER ERROR in /generate-questions !!!")
+        print(traceback.format_exc())
+        print("==================================================\n")
+        return jsonify({"error": "Internal server error"}), 500

@@ -16,27 +16,26 @@ async function getJSON(path) {
 export default function Notebook() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
-
-  // student id (same pattern as Revision.jsx)
-  const [studentId] = useState(
-    () => localStorage.getItem("student_id") || "TEMP-STUDENT-ID"
-  );
 
   async function loadNotes() {
     try {
-      setLoading(true);
-      setError("");
+      const token = localStorage.getItem("token"); // from login system
 
-      // hit the same backend route used by Revision.jsx
-      const data = await getJSON(`/notes?student_id=${encodeURIComponent(studentId)}`);
+      const res = await fetch("http://localhost:5000/api/notes/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      // backend returns { notes: [...] }
-      const list = data.notes || [];
-      setNotes(list);
+      if (!res.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const data = await res.json();
+      setNotes(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error loading notes:", err);
-      setError(err.message || "Could not load your notes.");
+      setNotes([]);
     } finally {
       setLoading(false);
     }
@@ -49,11 +48,9 @@ export default function Notebook() {
   return (
     <div className="container-fluid py-4">
       <div className="row g-4">
-
         {/* LEFT SIDEBAR */}
         <div className="col-4">
-
-          {/* Buttons Row */}
+          {/* Buttons */}
           <div className="d-flex gap-3 mb-4">
             <button className="btn btn-secondary w-50">Upload</button>
             <button className="btn btn-primary w-50">New</button>
@@ -81,33 +78,26 @@ export default function Notebook() {
               </div>
             )}
 
-            {!loading && notes.map((note) => (
-              <div key={note._id} className="card p-3 notebook-note-card">
+            {!loading &&
+              notes.map((note) => (
+                <div key={note.id} className="card p-3 notebook-note-card">
+                  <div className="small text-muted mb-2">
+                    {new Date(note.created_at).toLocaleString()}
+                  </div>
 
-                <div className="small text-muted mb-1">
-                  {note.created_at
-                    ? new Date(note.created_at).toLocaleString()
-                    : "No date"}
+                  <div className="fw-bold mb-1">{note.title || "(Untitled)"}</div>
+
+                  <div className="notebook-note-preview">
+                    {(note.note_text || "").length > 120
+                      ? note.note_text.slice(0, 120) + "…"
+                      : note.note_text}
+                  </div>
                 </div>
-
-                <div className="fw-bold mb-1">
-                  {note.title || "Untitled note"}
-                </div>
-
-                <div className="notebook-note-preview">
-                  {note.note_text
-                    ? (note.note_text.length > 120
-                        ? note.note_text.slice(0, 120) + "…"
-                        : note.note_text)
-                    : <span className="text-muted">No content</span>}
-                </div>
-
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
-        {/* RIGHT EDITOR PANEL */}
+        {/* RIGHT PANEL */}
         <div className="col-8">
           <div className="card p-4 h-100">
             <div className="editor-placeholder text-muted">
@@ -115,7 +105,6 @@ export default function Notebook() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -2,9 +2,11 @@ import { useState, useMemo } from "react";
 import "../styles/notes.css";
 
 export default function InClassNotes() {
+  const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [questions, setQuestions] = useState([]);
   const [loadingQ, setLoadingQ] = useState(false);
+  const [savedMsg, setSavedMsg] = useState("");
 
   // ---------------------------
   // Live Stats
@@ -19,28 +21,74 @@ export default function InClassNotes() {
     return { words, chars, readingMin, speakingSec };
   }, [text]);
 
+  // Retrieve stored access token
+  function getToken() {
+    return localStorage.getItem("token");
+  }
+
   // ---------------------------
   // Save Notes to DB
   // ---------------------------
   async function handleSave() {
-    if (!text.trim()) return;
+    const trimmedText = text.trim();
+    const trimmedTitle = title.trim();
+    if (!trimmedText) return;
+
+    const token = getToken();
+    if (!token) {
+      console.error("No auth token found; cannot save note");
+      return;
+    }
 
     try {
-      await fetch("http://127.0.0.1:8080/api/notes/save", {
+      const res = await fetch("http://localhost:5000/api/notes/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          note_text: trimmedText,
+          title: trimmedTitle || "Untitled Note",
+        }),
       });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error("Save failed:", res.status, errBody);
+        return;
+      }
+
+      // SUCCESS → Clear fields + show message
+      setText("");
+      setTitle("");
+      setSavedMsg("Note saved!");
+
+      setTimeout(() => setSavedMsg(""), 2500);
     } catch (err) {
       console.error("Save error:", err);
     }
   }
 
   // ---------------------------
+  // Delete a single question
+  // ---------------------------
+  function removeQuestion(index) {
+    setQuestions((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  // ---------------------------
   // Generate Questions (via backend)
   // ---------------------------
   async function generateQuestions() {
-    if (!text.trim()) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    const token = getToken();
+    if (!token) {
+      console.error("No auth token found; cannot call AI");
+      return;
+    }
 
     setLoadingQ(true);
     setQuestions([]);
@@ -48,29 +96,37 @@ export default function InClassNotes() {
     try {
       const res = await fetch("http://localhost:5000/api/ai/generate-questions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: trimmed }),
       });
 
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        console.error("Could not parse JSON from backend");
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error(
+          "AI endpoint failed:",
+          res.status,
+          res.statusText,
+          errBody
+        );
         setLoadingQ(false);
         return;
       }
 
-      if (data?.questions && Array.isArray(data.questions)) {
+      const data = await res.json();
+
+      if (Array.isArray(data.questions)) {
         setQuestions(data.questions);
       } else {
-        console.error("Backend returned unexpected format:", data);
+        console.error("Unexpected AI response format:", data);
       }
     } catch (err) {
       console.error("AI Request Failed:", err);
+    } finally {
+      setLoadingQ(false);
     }
-
-    setLoadingQ(false);
   }
 
   // ---------------------------
@@ -79,7 +135,7 @@ export default function InClassNotes() {
   return (
     <div className="ic-page">
       <div className="ic-wrapper position-relative">
-
+        
         {/* Header Bar */}
         <div className="ic-header">
           <h2>In-Class Notes</h2>
@@ -99,6 +155,15 @@ export default function InClassNotes() {
           </div>
         </div>
 
+        {/* Title Input */}
+        <input
+          className="ic-title-input"
+          type="text"
+          placeholder="Enter note title..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
         {/* Main Typing Area */}
         <textarea
           className="ic-textarea"
@@ -107,11 +172,14 @@ export default function InClassNotes() {
           placeholder="Start typing..."
         />
 
+        {/* Save Notification */}
+        {savedMsg && <div className="ic-save-notification">{savedMsg}</div>}
+
         {/* Questions Overlay */}
         <div className="ic-questions-overlay">
           <h5 className="ic-q-title">Questions</h5>
 
-          <div className="ic-q-scroll">
+          <div className="ic-q-bubbles">
             {!loadingQ && questions.length === 0 && (
               <div className="ic-q-empty">No questions yet</div>
             )}
@@ -119,8 +187,14 @@ export default function InClassNotes() {
             {loadingQ && <div className="ic-q-empty">Working...</div>}
 
             {questions.map((q, i) => (
-              <div key={i} className="ic-q-item">
-                • {q}
+              <div key={i} className="ic-q-bubble">
+                <span className="ic-q-text">{q}</span>
+                <button
+                  className="ic-q-close"
+                  onClick={() => removeQuestion(i)}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
@@ -131,8 +205,12 @@ export default function InClassNotes() {
           <h5 className="ic-stats-title">Stats</h5>
           <div className="ic-stats-item">Words: {stats.words}</div>
           <div className="ic-stats-item">Characters: {stats.chars}</div>
-          <div className="ic-stats-item">Reading time: {stats.readingMin} min</div>
-          <div className="ic-stats-item">Speaking time: {stats.speakingSec}s</div>
+          <div className="ic-stats-item">
+            Reading time: {stats.readingMin} min
+          </div>
+          <div className="ic-stats-item">
+            Speaking time: {stats.speakingSec}s
+          </div>
         </div>
       </div>
     </div>
