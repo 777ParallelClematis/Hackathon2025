@@ -2,9 +2,11 @@ import { useState, useMemo } from "react";
 import "../styles/notes.css";
 
 export default function InClassNotes() {
+  const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [questions, setQuestions] = useState([]);
   const [loadingQ, setLoadingQ] = useState(false);
+  const [savedMsg, setSavedMsg] = useState("");
 
   // ---------------------------
   // Live Stats
@@ -28,8 +30,9 @@ export default function InClassNotes() {
   // Save Notes to DB
   // ---------------------------
   async function handleSave() {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+    const trimmedText = text.trim();
+    const trimmedTitle = title.trim();
+    if (!trimmedText) return;
 
     const token = getToken();
     if (!token) {
@@ -45,15 +48,23 @@ export default function InClassNotes() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          note_text: trimmed,
-          title: "", // future: maybe auto-generate from first line
+          note_text: trimmedText,
+          title: trimmedTitle || "Untitled Note",
         }),
       });
 
       if (!res.ok) {
         const errBody = await res.text();
         console.error("Save failed:", res.status, errBody);
+        return;
       }
+
+      // SUCCESS → Clear fields + show message
+      setText("");
+      setTitle("");
+      setSavedMsg("Note saved!");
+
+      setTimeout(() => setSavedMsg(""), 2500);
     } catch (err) {
       console.error("Save error:", err);
     }
@@ -104,19 +115,12 @@ export default function InClassNotes() {
         return;
       }
 
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        console.error("Could not parse JSON from backend");
-        setLoadingQ(false);
-        return;
-      }
+      const data = await res.json();
 
-      if (data?.questions && Array.isArray(data.questions)) {
+      if (Array.isArray(data.questions)) {
         setQuestions(data.questions);
       } else {
-        console.error("Backend returned unexpected format:", data);
+        console.error("Unexpected AI response format:", data);
       }
     } catch (err) {
       console.error("AI Request Failed:", err);
@@ -151,6 +155,15 @@ export default function InClassNotes() {
           </div>
         </div>
 
+        {/* Title Input */}
+        <input
+          className="ic-title-input"
+          type="text"
+          placeholder="Enter note title..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
         {/* Main Typing Area */}
         <textarea
           className="ic-textarea"
@@ -158,6 +171,9 @@ export default function InClassNotes() {
           onChange={(e) => setText(e.target.value)}
           placeholder="Start typing..."
         />
+
+        {/* Save Notification */}
+        {savedMsg && <div className="ic-save-notification">{savedMsg}</div>}
 
         {/* Questions Overlay */}
         <div className="ic-questions-overlay">
@@ -196,7 +212,6 @@ export default function InClassNotes() {
             Speaking time: {stats.speakingSec}s
           </div>
         </div>
-
       </div>
     </div>
   );
