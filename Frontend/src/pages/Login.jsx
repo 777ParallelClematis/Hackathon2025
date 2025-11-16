@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 
 import "../styles/global.css";
-import "../styles/backgrounds.css";   // ← add this
+import "../styles/backgrounds.css";
 import "../styles/login.css";
 
 export default function Login() {
@@ -29,7 +29,10 @@ export default function Login() {
       }
 
       const data = await res.json();
-      login(data.token);
+
+      // *** FIXED LINE ***
+      login(data.accessToken);
+
       navigate("/notes");
 
     } catch (err) {
@@ -89,23 +92,21 @@ export default function Login() {
         </form>
 
         <button
-  type="button"
-  onClick={() => document.body.classList.toggle("light")}
-  style={{
-    position: "fixed",
-    top: "20px",
-    right: "20px",
-    padding: "6px 12px",
-    background: "var(--accent)",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer"
-  }}
->
-  Toggle Theme
-</button>
-
-
+          type="button"
+          onClick={() => document.body.classList.toggle("light")}
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            padding: "6px 12px",
+            background: "var(--accent)",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Toggle Theme
+        </button>
       </div>
     </div>
   );
