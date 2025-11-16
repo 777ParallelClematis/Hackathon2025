@@ -11,8 +11,9 @@ from routes.user_routes import user_routes
 from routes.notes_routes import notes_routes
 from routes.ai_routes import ai_routes
 
-# Rate limiter
+# Middleware
 from middleware.rate_limit import limiter
+from middleware.security_headers import apply_security_headers
 
 # Database
 from db import init_db_client, get_db
@@ -24,10 +25,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # --- Initialise rate limiting for this app ---
+    # -------------------------------
+    # Rate Limiting (global init)
+    # -------------------------------
     limiter.init_app(app)
 
-    # --- Restrictive CORS ---
+    # -------------------------------
+    # CORS (restrictive)
+    # -------------------------------
     CORS(
         app,
         resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}},
@@ -36,15 +41,28 @@ def create_app():
         max_age=3600,
     )
 
-    # --- Initialise DB client once ---
+    # -------------------------------
+    # Database init (one-time)
+    # -------------------------------
     init_db_client(app)
 
-    # --- Register blueprints ---
+    # -------------------------------
+    # Register Blueprints
+    # -------------------------------
     app.register_blueprint(user_routes, url_prefix="/api/users")
     app.register_blueprint(notes_routes, url_prefix="/api/notes")
     app.register_blueprint(ai_routes, url_prefix="/api/ai")
 
-    # --- DB test route ---
+    # -------------------------------
+    # Security Headers (applied globally)
+    # -------------------------------
+    @app.after_request
+    def set_security_headers(response):
+        return apply_security_headers(response)
+
+    # -------------------------------
+    # DB test route
+    # -------------------------------
     @app.route("/api/test-db", methods=["GET"])
     def test_db():
         try:
