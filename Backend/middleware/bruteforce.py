@@ -3,14 +3,18 @@ import time
 from functools import wraps
 from flask import request, jsonify
 
-# In-memory tracking (per-process)
-# In production, you would replace this with Redis.
-_failed_attempts = {}
-_locked_accounts = {}
+from middleware.redis_client import redis_client
 
-# Configuration
-MAX_ATTEMPTS = 5           # before lockout
-LOCKOUT_SECONDS = 600      # 10 minutes
+MAX_ATTEMPTS = 5          # before lockout
+LOCKOUT_SECONDS = 600     # 10 minutes (temporary lockout)
+
+
+def brute_force_key(email, ip):
+    return f"bf:{email}:{ip}"
+
+
+def lockout_key(email):
+    return f"bf_lock:{email}"
 
 
 def bruteforce_protect(f):
@@ -21,46 +25,49 @@ def bruteforce_protect(f):
         email = (data.get("email") or "").lower().strip()
         ip = request.remote_addr or "unknown"
 
-        # Keyed by BOTH email and ip
-        key = f"{email}:{ip}"
+        attempt_key = brute_force_key(email, ip)
+        lock_key = lockout_key(email)
 
-        # ----------------------------------------
-        # Check if account is currently locked
-        # ----------------------------------------
-        if email in _locked_accounts:
-            locked_until = _locked_accounts[email]
-            now = time.time()
-
-            if now < locked_until:
-                # Still locked
-                return jsonify({
-                    "message": "Invalid credentials"  # don't reveal lockout
-                }), 401
+        # -------------------------------------
+        # Check lockout
+        # -------------------------------------
+        locked_until = redis_client.get(lock_key)
+        if locked_until:
+            if float(locked_until) > time.time():
+                # Locked; return generic error (OWASP requirement)
+                return jsonify({"message": "Invalid credentials"}), 401
             else:
-                # Lock expired
-                _locked_accounts.pop(email, None)
-                _failed_attempts.pop(key, None)
+                # Lock expired → remove
+                redis_client.delete(lock_key)
+                redis_client.delete(attempt_key)
 
-        # ----------------------------------------
-        # Call the wrapped function (login_user)
-        # ----------------------------------------
+        # -------------------------------------
+        # Execute actual login logic
+        # -------------------------------------
         response = f(*args, **kwargs)
 
-        # If login successful, reset counters
+        # Successful login resets counters
         if response[1] == 200:
-            _failed_attempts.pop(key, None)
+            redis_client.delete(attempt_key)
             return response
 
-        # ----------------------------------------
-        # Handle failed login (status not 200)
-        # ----------------------------------------
-        count = _failed_attempts.get(key, 0) + 1
-        _failed_attempts[key] = count
+        # -------------------------------------
+        # On failure: increment attempts
+        # -------------------------------------
+        attempts = redis_client.incr(attempt_key)
 
-        if count >= MAX_ATTEMPTS:
-            # Lock the account
-            _locked_accounts[email] = time.time() + LOCKOUT_SECONDS
-            _failed_attempts.pop(key, None)
+        # Set TTL on attempts so old failures expire
+        redis_client.expire(attempt_key, LOCKOUT_SECONDS)
+
+        if attempts >= MAX_ATTEMPTS:
+            # Place lockout
+            redis_client.set(
+                lock_key,
+                time.time() + LOCKOUT_SECONDS,
+                ex=LOCKOUT_SECONDS
+            )
+            # Reset attempts
+            redis_client.delete(attempt_key)
 
         # Always return the same message
         return jsonify({"message": "Invalid credentials"}), 401

@@ -14,6 +14,7 @@ from routes.ai_routes import ai_routes
 # Middleware
 from middleware.rate_limit import limiter
 from middleware.security_headers import apply_security_headers
+from middleware.logging_middleware import before_request_logging, after_request_logging
 
 # Database
 from db import init_db_client, get_db
@@ -54,11 +55,22 @@ def create_app():
     app.register_blueprint(ai_routes, url_prefix="/api/ai")
 
     # -------------------------------
-    # Security Headers (applied globally)
+    # Security Headers (global)
     # -------------------------------
     @app.after_request
     def set_security_headers(response):
         return apply_security_headers(response)
+
+    # -------------------------------
+    # Logging Middleware
+    # -------------------------------
+    @app.before_request
+    def log_before():
+        before_request_logging()
+
+    @app.after_request
+    def log_after(response):
+        return after_request_logging(response)
 
     # -------------------------------
     # DB test route
